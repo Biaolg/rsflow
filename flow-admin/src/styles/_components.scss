@@ -1,0 +1,147 @@
+// 组件样式
+
+// 容器组件
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+
+  @include respond-to('xs') {
+    padding: 0 $spacing-sm;
+  }
+}
+
+// 卡片组件
+.card {
+  background: white;
+  border-radius: $border-radius-base;
+  box-shadow: $box-shadow-light;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  &--shadow {
+    box-shadow: $box-shadow-base;
+  }
+
+  &--bordered {
+    border: 1px solid $border-color-base;
+    box-shadow: none;
+  }
+}
+
+// 按钮组件
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid transparent;
+  border-radius: $border-radius-base;
+  font-size: $font-size-base;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &--primary {
+    @include button-variant($primary-color, $primary-color, white);
+  }
+
+  &--default {
+    @include button-variant(white, $border-color-base, $text-color);
+
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+
+  &--dashed {
+    @include button-variant(white, $border-color-base, $text-color);
+    border-style: dashed;
+
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+
+  &--text {
+    @include button-variant(transparent, transparent, $primary-color);
+
+    &:hover {
+      background-color: rgba($primary-color, 0.1);
+    }
+  }
+
+  &--link {
+    @include button-variant(transparent, transparent, $primary-color);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &--sm {
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+  }
+
+  &--lg {
+    padding: $spacing-md $spacing-lg;
+    font-size: $font-size-lg;
+  }
+
+  &--block {
+    width: 100%;
+  }
+}
+
+// 表单组件
+.form {
+  &-group {
+    margin-bottom: $spacing-md;
+
+    &__label {
+      display: block;
+      margin-bottom: $spacing-xs;
+      font-weight: 500;
+      color: $text-color;
+    }
+
+    &__control {
+      width: 100%;
+      padding: $spacing-sm;
+      border: 1px solid $border-color-base;
+      border-radius: $border-radius-base;
+      transition: border-color 0.3s;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.2);
+      }
+
+      &--error {
+        border-color: $error-color;
+
+        &:focus {
+          border-color: $error-color;
+          box-shadow: 0 0 0 2px rgba($error-color, 0.2);
+        }
+      }
+    }
+
+    &__error {
+      margin-top: $spacing-xs;
+      color: $error-color;
+      font-size: $font-size-sm;
+    }
+  }
+}

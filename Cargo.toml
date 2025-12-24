@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "flow-server",
+    "flow-server/rsflow-core",
+]
+
+[workspace.dependencies]
+rsflow-core = { path = "flow-server/rsflow-core" }

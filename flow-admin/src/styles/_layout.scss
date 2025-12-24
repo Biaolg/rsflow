@@ -1,0 +1,170 @@
+// 布局样式
+
+// 布局容器
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    position: sticky;
+    top: 0;
+  }
+
+  &__content {
+    flex: 1;
+    padding: $spacing-lg;
+    background: $bg-color;
+  }
+
+  &__footer {
+    background: white;
+    border-top: 1px solid $border-color-split;
+    padding: $spacing-md;
+    text-align: center;
+    color: $text-color-secondary;
+  }
+}
+
+// 侧边栏布局
+.sidebar-layout {
+  display: flex;
+  min-height: 100vh;
+
+  &__sidebar {
+    width: 240px;
+    background: white;
+    border-right: 1px solid $border-color-split;
+    transition: width 0.3s;
+
+    &--collapsed {
+      width: 80px;
+    }
+  }
+
+  &__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__content {
+    flex: 1;
+    padding: $spacing-lg;
+    background: $bg-color;
+  }
+}
+
+// 网格系统
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 (-$spacing-sm);
+
+  &--no-gutter {
+    margin: 0;
+
+    > .col {
+      padding: 0;
+    }
+  }
+}
+
+.col {
+  padding: 0 $spacing-sm;
+  flex: 1;
+
+  @for $i from 1 through 24 {
+    &--#{$i} {
+      flex: 0 0 percentage($i / 24);
+      max-width: percentage($i / 24);
+    }
+
+    &--offset-#{$i} {
+      margin-left: percentage($i / 24);
+    }
+  }
+
+  @include respond-to('xs') {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+}
+
+// 弹性布局工具类
+.flex {
+  display: flex;
+
+  &--column {
+    flex-direction: column;
+  }
+
+  &--wrap {
+    flex-wrap: wrap;
+  }
+
+  &--center {
+    @include center;
+  }
+
+  &--between {
+    justify-content: space-between;
+  }
+
+  &--around {
+    justify-content: space-around;
+  }
+
+  &--evenly {
+    justify-content: space-evenly;
+  }
+
+  &--start {
+    justify-content: flex-start;
+  }
+
+  &--end {
+    justify-content: flex-end;
+  }
+
+  &--align-start {
+    align-items: flex-start;
+  }
+
+  &--align-center {
+    align-items: center;
+  }
+
+  &--align-end {
+    align-items: flex-end;
+  }
+}
+
+// 间距工具类
+.m {
+  @for $i from 0 through 5 {
+    &t-#{$i} { margin-top: $spacing-sm * $i; }
+    &r-#{$i} { margin-right: $spacing-sm * $i; }
+    &b-#{$i} { margin-bottom: $spacing-sm * $i; }
+    &l-#{$i} { margin-left: $spacing-sm * $i; }
+    &x-#{$i} { margin-left: $spacing-sm * $i; margin-right: $spacing-sm * $i; }
+    &y-#{$i} { margin-top: $spacing-sm * $i; margin-bottom: $spacing-sm * $i; }
+    &-#{$i} { margin: $spacing-sm * $i; }
+  }
+}
+
+.p {
+  @for $i from 0 through 5 {
+    &t-#{$i} { padding-top: $spacing-sm * $i; }
+    &r-#{$i} { padding-right: $spacing-sm * $i; }
+    &b-#{$i} { padding-bottom: $spacing-sm * $i; }
+    &l-#{$i} { padding-left: $spacing-sm * $i; }
+    &x-#{$i} { padding-left: $spacing-sm * $i; padding-right: $spacing-sm * $i; }
+    &y-#{$i} { padding-top: $spacing-sm * $i; padding-bottom: $spacing-sm * $i; }
+    &-#{$i} { padding: $spacing-sm * $i; }
+  }
+}

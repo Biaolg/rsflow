@@ -1,0 +1,17 @@
+// 主样式文件
+// 导入所有SCSS模块
+
+// 变量定义
+@import 'variables';
+
+// 混合器
+@import 'mixins';
+
+// 基础样式
+@import 'base';
+
+// 组件样式
+@import 'components';
+
+// 布局样式
+@import 'layout';
