@@ -21,4 +21,5 @@ node_modules/
 *.tsbuildinfo
 
 /low-server/target
+target/
 .cache/
