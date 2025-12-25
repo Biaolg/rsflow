@@ -180,24 +180,20 @@ impl Engine {
                         if msgs.is_empty() {
                             break;
                         }
-                        //获取执行node的输出节点定义
+                        // 获取执行node的输出节点定义
                         let out_ids = node.info().output_ids;
-                        //循环消息列表将待执行节点推入队列
-                        for (idx, out_msg) in msgs.iter().enumerate() {
-                            let index = idx as u8;
-                            // 使用 if let 模式匹配
-                            if let Some(out_node_ids) = out_ids.get(&index) {
-                                // 这里 out_node_ids 是 &Vec<Uuid>
-                                for (out_idx, out_node_id) in out_node_ids.iter().enumerate() {
+                        // 将后续节点推入队列
+                        for (index, out_msg) in msgs.iter().enumerate() {
+                            if let Some(out_node_ids) = out_ids.get(&(index as u8)) {
+                                for out_node_id in out_node_ids {
                                     flow_run_node_ids.push_back(NodeRunItem {
                                         node_id: out_node_id.clone(),
                                         msg: out_msg.clone(),
                                     });
                                 }
-                            } else {
-                                continue;
                             }
                         }
+
                     }
                     Err(err) => {
                         eprintln!(
