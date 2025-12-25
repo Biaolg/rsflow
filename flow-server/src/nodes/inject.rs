@@ -1,4 +1,6 @@
-use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, Value};
+use rsflow_core::{
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, Value,
+};
 use std::sync::Arc;
 
 pub struct InjectNode {
@@ -11,17 +13,19 @@ impl Node for InjectNode {
         self.info.clone()
     }
     async fn on_start(&self, sender: EngineSender) {
-        // tokio::spawn(async move {
-        //     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+        let node_id = self.info.id;
 
-        //     loop {
-        //         interval.tick().await;
-        //         sender.send(self.info.id, Value::Int(1)).await;
-        //     }
-        // });
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+
+            loop {
+                interval.tick().await;
+                sender.send(node_id, Value::Int(1)).await; // ✅ 使用复制的值
+            }
+        });
     }
-    async fn on_input(&self, ctx: FlowContext) -> Result<Vec<FlowContext>, NodeError> {
-        Ok(vec![ctx])
+    async fn on_input(&self, _: &FlowContext, msg: &Value) -> Result<Vec<Value>, NodeError> {
+        Ok(vec![msg.clone()])
     }
 }
 

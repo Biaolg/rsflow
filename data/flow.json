@@ -42,7 +42,8 @@
                         {
                             "prot": 0,
                             "nodes": [
-                                "ab3f1685-b409-42ee-bf49-793ca63f5de3"
+                                "ab3f1685-b409-42ee-bf49-793ca63f5de3",
+                                "ab3f1685-b409-42ee-bf49-793ca63f5de4"
                             ]
                         }
                     ]
@@ -56,6 +57,17 @@
                         "shell": "cmd",
                         "command": "echo 'hello3'"
                     },
+                    "input": [
+                        "0c72f3d3-3b9b-45db-866e-3615811940fe"
+                    ],
+                    "output": []
+                },
+                {
+                    "id": "ab3f1685-b409-42ee-bf49-793ca63f5de4",
+                    "name": "Log Node 1",
+                    "node_type": "log",
+                    "description": "This is the first Log step",
+                    "config": {},
                     "input": [
                         "0c72f3d3-3b9b-45db-866e-3615811940fe"
                     ],

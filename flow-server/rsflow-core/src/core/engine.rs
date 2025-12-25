@@ -1,4 +1,4 @@
-use crate::core::value::Value;
+use crate::core::{FlowContext, Value, node};
 use uuid::Uuid;
 // 前向声明 EngineSender，避免循环依赖
 pub struct EngineSender {
@@ -6,30 +6,39 @@ pub struct EngineSender {
 }
 
 impl EngineSender {
-    pub async fn run_flow(&self, ctx: FlowContext) {
-        let _ = self.tx.send(EngineMessage::RunFlow(ctx)).await;
+    pub async fn run_flow(&self, ctx: FlowContext, start_node_id: Uuid, msg: Value) {
+        let _ = self
+            .tx
+            .send(EngineMessage::RunFlow {
+                ctx,
+                start_node_id,
+                msg,
+            })
+            .await;
     }
-    pub async fn send(&self, node_id: Uuid, input: Value) {
-        let ctx = FlowContext{
+    pub async fn send(&self, node_id: Uuid, msg: Value) {
+        let ctx = FlowContext {
             id: Uuid::new_v4(),
-            start_node_id: node_id,
-            payload: input,
+            run_node_ids: vec![],
         };
-        let _ = self.tx.send(EngineMessage::RunFlow(ctx)).await;
+        let _ = self
+            .tx
+            .send(EngineMessage::RunFlow {
+                ctx,
+                start_node_id: node_id,
+                msg,
+            })
+            .await;
     }
-}
-
-// flow上下文
-#[derive(Clone, Debug)]
-pub struct FlowContext {
-    pub id: Uuid,
-    pub start_node_id: Uuid,
-    pub payload: Value,
 }
 
 // 引擎消息定义
 #[derive(Clone, Debug)]
 pub enum EngineMessage {
-    RunFlow(FlowContext),
+    RunFlow {
+        ctx: FlowContext,
+        start_node_id: Uuid,
+        msg: Value,
+    },
     Stop,
 }

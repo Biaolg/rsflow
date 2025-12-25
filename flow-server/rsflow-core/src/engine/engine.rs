@@ -1,8 +1,7 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeOutput,
-    Value,
+    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo,
+    NodeOutputIds, NodeRunItem, Value,
 };
-use crate::flow::models::Flow;
 use crate::flow::{
     FlowMod, parse_flow_all_node_types, parse_flow_all_nodes, parse_flow_file, validate_flow,
 };
@@ -15,11 +14,12 @@ use uuid::Uuid;
 
 type FactoryMap = HashMap<String, Box<dyn NodeFactory>>;
 type NodeMap = HashMap<Uuid, Arc<dyn Node + Send + Sync>>;
+type Nodes = Arc<NodeMap>;
 type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
 
 pub struct Engine {
     flow_mod: FlowMod,
-    nodes: NodeMap,
+    nodes: Nodes,
     receiver: Mutex<mpsc::Receiver<EngineMessage>>,
     sender: mpsc::Sender<EngineMessage>,
 }
@@ -81,13 +81,10 @@ impl Engine {
         for flow_node in &flow_nodes {
             if let Some(factory) = factories.get(&flow_node.node_type) {
                 // 将 FlowNode 转换为 NodeInfo
-                let outputs = flow_node
+                let outputs: NodeOutputIds = flow_node
                     .output
                     .iter()
-                    .map(|out| NodeOutput {
-                        prot: out.prot,
-                        nodes: out.nodes.clone(),
-                    })
+                    .map(|out| (out.prot, out.nodes.clone()))
                     .collect();
 
                 let node_info = NodeInfo {
@@ -96,8 +93,8 @@ impl Engine {
                     node_type: flow_node.node_type.clone(),
                     description: flow_node.description.clone(),
                     config: flow_node.config.clone(),
-                    input: flow_node.input.clone(),
-                    output: outputs,
+                    input_ids: flow_node.input.clone(),
+                    output_ids: outputs,
                 };
 
                 match factory.create(node_info).await {
@@ -118,7 +115,7 @@ impl Engine {
 
         Ok(Arc::new(Self {
             flow_mod,
-            nodes,
+            nodes: Arc::new(nodes),
             receiver: Mutex::new(rx),
             sender: tx,
         }))
@@ -143,8 +140,12 @@ impl Engine {
         let mut rx = self.receiver.lock().await;
         while let Some(msg) = rx.recv().await {
             match msg {
-                EngineMessage::RunFlow(ctx) => {
-                    self.flow_run(ctx).await;
+                EngineMessage::RunFlow {
+                    ctx,
+                    start_node_id,
+                    msg,
+                } => {
+                    self.flow_run(ctx, start_node_id, msg);
                 }
                 EngineMessage::Stop => {
                     println!("Engine stopping...");
@@ -157,9 +158,58 @@ impl Engine {
     }
 
     /// 核心调度逻辑
-    async fn flow_run(&self, ctx: FlowContext) {
-        tokio::spawn(async move{
-            
+    fn flow_run(&self, mut ctx: FlowContext, start_node_id: Uuid, msg: Value) {
+        let nodes: Nodes = Arc::clone(&self.nodes);
+        tokio::spawn(async move {
+            let mut flow_run_node_ids: VecDeque<NodeRunItem> = VecDeque::new();
+
+            flow_run_node_ids.push_back(NodeRunItem {
+                node_id: start_node_id,
+                msg: msg,
+            });
+
+            while let Some(node_run_item) = flow_run_node_ids.pop_front() {
+                let Some(node) = nodes.get(&node_run_item.node_id) else {
+                    eprintln!("Node {} not found", node_run_item.node_id);
+                    break;
+                };
+                match node.on_input(&ctx, &node_run_item.msg).await {
+                    Ok(msgs) => {
+                        ctx.run_node_ids.push(node_run_item.node_id);
+                        // 无消息直接结束执行
+                        if msgs.is_empty() {
+                            break;
+                        }
+                        //获取执行node的输出节点定义
+                        let out_ids = node.info().output_ids;
+                        //循环消息列表将待执行节点推入队列
+                        for (idx, out_msg) in msgs.iter().enumerate() {
+                            let index = idx as u8;
+                            // 使用 if let 模式匹配
+                            if let Some(out_node_ids) = out_ids.get(&index) {
+                                // 这里 out_node_ids 是 &Vec<Uuid>
+                                for (out_idx, out_node_id) in out_node_ids.iter().enumerate() {
+                                    flow_run_node_ids.push_back(NodeRunItem {
+                                        node_id: out_node_id.clone(),
+                                        msg: out_msg.clone(),
+                                    });
+                                }
+                            } else {
+                                continue;
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!(
+                            "Node {} - {} error: {:?}",
+                            node_run_item.node_id,
+                            node.info().name,
+                            err
+                        );
+                        break;
+                    }
+                }
+            }
         });
     }
 }
