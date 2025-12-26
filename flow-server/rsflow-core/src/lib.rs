@@ -6,7 +6,7 @@ pub mod flow;
 pub use crate::core::FlowContext;
 pub use crate::core::engine::{EngineConfig, EngineMessage, EngineSender};
 pub use crate::core::node::{
-    Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput,
+    Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput,NodeRunItem
 };
 pub use crate::core::value::Value;
 pub use crate::engine::{Engine, EngineBuilder};

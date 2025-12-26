@@ -1,5 +1,6 @@
 use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeOutput, Value,
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    NodeOutput, NodeRunItem, Value,
 };
 use std::sync::Arc;
 
@@ -12,7 +13,7 @@ impl Node for InjectNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn on_start(&self, sender: EngineSender) {
+    async fn init(&self, sender: EngineSender) {
         let node_id = self.info.id;
 
         tokio::spawn(async move {
@@ -20,12 +21,29 @@ impl Node for InjectNode {
 
             loop {
                 interval.tick().await;
-                sender.send(node_id, Value::Int(1)).await; // ✅ 使用复制的值
+                sender
+                    .run_flow(NodeRunItem {
+                        node_id,
+                        node_input: NodeInput {
+                            port: 0,
+                            msg: Value::Int(1),
+                        },
+                    })
+                    .await; // ✅ 使用复制的值
             }
         });
     }
-    async fn on_input(&self, _: &FlowContext, msg: &Value) -> Result<NodeOutput, NodeError> {
-        Ok(NodeOutput::One((0,msg.clone())))
+
+    async fn event(&self, _: &str, _: &FlowContext, _: &Value) -> Result<(), NodeError> {
+        Ok(())
+    }
+
+    async fn input(
+        &self,
+        _: &FlowContext,
+        node_input: &NodeInput,
+    ) -> Result<NodeOutput, NodeError> {
+        Ok(NodeOutput::One((0, node_input.msg.clone())))
     }
 }
 
