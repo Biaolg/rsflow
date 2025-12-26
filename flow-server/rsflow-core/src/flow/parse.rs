@@ -43,9 +43,9 @@ pub fn validate_flow(flow_mod: &FlowMod) -> Result<(), String> {
     for flow in &flow_mod.flow {
         for node in &flow.nodes {
             for output in &node.output {
-                for &next_id in &output.nodes {
-                    if !all_node_ids.contains(&next_id) {
-                        return Err(format!("Node {} references non-existent node {}", node.id, next_id));
+                for next_item in &output.nodes {
+                    if !all_node_ids.contains(&next_item.id) {
+                        return Err(format!("Node {} references non-existent node {}", node.id, next_item.id));
                     }
                 }
             }

@@ -1,4 +1,4 @@
-use crate::core::{FlowContext, Value};
+use crate::core::{FlowContext, NodeRunItem, Value};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -13,17 +13,7 @@ pub struct EngineSender {
 }
 
 impl EngineSender {
-    pub async fn run_flow(&self, ctx: FlowContext, start_node_id: Uuid, msg: Value) {
-        let _ = self
-            .tx
-            .send(EngineMessage::RunFlow {
-                ctx,
-                start_node_id,
-                msg,
-            })
-            .await;
-    }
-    pub async fn send(&self, node_id: Uuid, msg: Value) {
+    pub async fn run_flow(&self, start_node: NodeRunItem) {
         let ctx = FlowContext {
             id: Uuid::new_v4(),
             run_node_ids: vec![],
@@ -32,8 +22,7 @@ impl EngineSender {
             .tx
             .send(EngineMessage::RunFlow {
                 ctx,
-                start_node_id: node_id,
-                msg,
+                start_node,
             })
             .await;
     }
@@ -44,8 +33,7 @@ impl EngineSender {
 pub enum EngineMessage {
     RunFlow {
         ctx: FlowContext,
-        start_node_id: Uuid,
-        msg: Value,
+        start_node: NodeRunItem,
     },
     Stop,
 }

@@ -17,9 +17,21 @@ pub struct Flow {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct FlowNodePort {
+pub struct FlowNodeInputPort {
     pub port: u8,
     pub nodes: Vec<Uuid>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct FlowNodeOutputPortItem {
+    pub id: Uuid,
+    pub port: u8,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct FlowNodeOutputPort {
+    pub port: u8,
+    pub nodes: Vec<FlowNodeOutputPortItem>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -29,6 +41,6 @@ pub struct FlowNode {
     pub node_type: String,
     pub description: String,
     pub config: Value,
-    pub input: Vec<FlowNodePort>,
-    pub output: Vec<FlowNodePort>,
+    pub input: Vec<FlowNodeInputPort>,
+    pub output: Vec<FlowNodeOutputPort>,
 }

@@ -4,7 +4,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 // 节点端点定义
-pub type NodePorts = HashMap<u8, Vec<Uuid>>;
+pub type NodeInputPorts = HashMap<u8, Vec<Uuid>>;
+pub type NodeOutputPorts = HashMap<u8, Vec<(Uuid, u8)>>;
 
 #[derive(Debug)]
 pub enum NodeError {
@@ -24,13 +25,20 @@ pub struct NodeInfo {
     pub node_type: String,
     pub description: String,
     pub config: Value,
-    pub input_ports: NodePorts,
-    pub output_ports: NodePorts,
+    pub input_ports: NodeInputPorts,
+    pub output_ports: NodeOutputPorts,
 }
 
 // 节点消息执行最小单位
+#[derive(Debug, Clone)]
 pub struct NodeRunItem {
     pub node_id: Uuid,
+    pub node_input: NodeInput,
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeInput {
+    pub port: u8,
     pub msg: Value,
 }
 //节点输出变体
@@ -46,10 +54,18 @@ pub trait Node: Send + Sync {
     fn info(&self) -> NodeInfo;
 
     /// 初始化节点
-    async fn on_start(&self, sender: EngineSender);
+    async fn init(&self, sender: EngineSender);
+
+    /// 节点接收到事件时的处理
+    async fn event(
+        &self,
+        event_type: &str,
+        ctx: &FlowContext,
+        msg: &Value,
+    ) -> Result<(), NodeError>;
 
     /// 节点接收到输入时的处理
-    async fn on_input(&self, ctx: &FlowContext, msg: &Value) -> Result<NodeOutput, NodeError>;
+    async fn input(&self, ctx: &FlowContext, node_input: &NodeInput) -> Result<NodeOutput, NodeError>;
 }
 
 #[async_trait::async_trait]

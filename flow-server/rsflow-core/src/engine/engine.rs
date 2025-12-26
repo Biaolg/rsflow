@@ -1,6 +1,6 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeOutput,
-    NodePorts, NodeRunItem, Value,
+    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
+    NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem,
 };
 use crate::flow::{
     FlowMod, parse_flow_all_node_types, parse_flow_all_nodes, parse_flow_file, validate_flow,
@@ -79,19 +79,27 @@ impl Engine {
         let mut nodes: NodeMap = HashMap::new();
         for flow_node in &flow_nodes {
             if let Some(factory) = factories.get(&flow_node.node_type) {
-
-                // 将 FlowNodeInput 转换为 NodePorts
-                let inputs: NodePorts = flow_node
+                // 将 FlowNodeInput 转换为 NodeInputPorts
+                let inputs: NodeInputPorts = flow_node
                     .input
                     .iter()
                     .map(|in_| (in_.port, in_.nodes.clone()))
                     .collect();
 
                 // 将 FlowNode 转换为 NodeInfo
-                let outputs: NodePorts = flow_node
+                let outputs: NodeOutputPorts = flow_node
                     .output
                     .iter()
-                    .map(|out| (out.port, out.nodes.clone()))
+                    .map(|out| {
+                        (
+                            out.port,
+                            out.nodes
+                                .clone()
+                                .into_iter()
+                                .map(|item| (item.id, item.port))
+                                .collect(),
+                        )
+                    })
                     .collect();
 
                 let node_info = NodeInfo {
@@ -138,7 +146,7 @@ impl Engine {
                 tx: self.sender.clone(),
             };
             println!("Initializing node: {} - {}", node_id, node.info().name);
-            node.on_start(sender).await;
+            node.init(sender).await;
         }
 
         println!("Engine started. Waiting for messages...");
@@ -147,12 +155,8 @@ impl Engine {
         let mut rx = self.receiver.lock().await;
         while let Some(msg) = rx.recv().await {
             match msg {
-                EngineMessage::RunFlow {
-                    ctx,
-                    start_node_id,
-                    msg,
-                } => {
-                    self.flow_run(ctx, start_node_id, msg);
+                EngineMessage::RunFlow { ctx, start_node } => {
+                    self.flow_run(ctx, start_node);
                 }
                 EngineMessage::Stop => {
                     println!("Engine stopping...");
@@ -165,22 +169,19 @@ impl Engine {
     }
 
     /// 核心调度逻辑
-    fn flow_run(&self, mut ctx: FlowContext, start_node_id: Uuid, msg: Value) {
+    fn flow_run(&self, mut ctx: FlowContext, start_node: NodeRunItem) {
         let nodes: Nodes = Arc::clone(&self.nodes);
         tokio::spawn(async move {
             let mut flow_run_node_ids: VecDeque<NodeRunItem> = VecDeque::new();
 
-            flow_run_node_ids.push_back(NodeRunItem {
-                node_id: start_node_id,
-                msg: msg,
-            });
+            flow_run_node_ids.push_back(start_node);
 
             while let Some(node_run_item) = flow_run_node_ids.pop_front() {
                 let Some(node) = nodes.get(&node_run_item.node_id) else {
                     eprintln!("Node {} not found", node_run_item.node_id);
                     continue;
                 };
-                match node.on_input(&ctx, &node_run_item.msg).await {
+                match node.input(&ctx, &node_run_item.node_input).await {
                     Ok(node_output) => {
                         ctx.run_node_ids.push(node_run_item.node_id);
                         match node_output {
@@ -190,16 +191,22 @@ impl Engine {
                                 let out_ids = node.info().output_ports;
                                 if let Some(out_node_ids) = out_ids.get(&port) {
                                     if out_node_ids.len() == 1 {
-                                        let out_node_id = &out_node_ids[0];
+                                        let (out_node_id, out_node_port) = &out_node_ids[0];
                                         flow_run_node_ids.push_back(NodeRunItem {
                                             node_id: *out_node_id,
-                                            msg: msg,
+                                            node_input: NodeInput {
+                                                port: *out_node_port,
+                                                msg: msg.clone(),
+                                            },
                                         });
                                     } else {
-                                        for out_node_id in out_node_ids {
+                                        for (out_node_id, out_node_port) in out_node_ids {
                                             flow_run_node_ids.push_back(NodeRunItem {
                                                 node_id: *out_node_id,
-                                                msg: msg.clone(),
+                                                node_input: NodeInput {
+                                                    port: *out_node_port,
+                                                    msg: msg.clone(),
+                                                },
                                             });
                                         }
                                     }
@@ -208,12 +215,15 @@ impl Engine {
                             NodeOutput::Many(msgs) => {
                                 // 获取执行node的输出节点定义
                                 let out_ids = node.info().output_ports;
-                                for (_, (port,msg)) in msgs.iter().enumerate() {
+                                for (_, (port, msg)) in msgs.iter().enumerate() {
                                     if let Some(out_node_ids) = out_ids.get(port) {
-                                        for out_node_id in out_node_ids {
+                                        for (out_node_id, out_node_port) in out_node_ids {
                                             flow_run_node_ids.push_back(NodeRunItem {
-                                                node_id: out_node_id.clone(),
-                                                msg: msg.clone(),
+                                                node_id: *out_node_id,
+                                                node_input: NodeInput {
+                                                    port: *out_node_port,
+                                                    msg: msg.clone(),
+                                                },
                                             });
                                         }
                                     }
