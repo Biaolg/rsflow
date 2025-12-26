@@ -3,5 +3,5 @@ use uuid::Uuid;
 #[derive(Clone, Debug)]
 pub struct FlowContext {
     pub id: Uuid,
-    pub run_node_ids:Vec<Uuid>
+    pub run_node_ids: Vec<Uuid>
 }

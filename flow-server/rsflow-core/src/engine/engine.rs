@@ -187,7 +187,7 @@ impl Engine {
                             if let Some(out_node_ids) = out_ids.get(&(index as u8)) {
                                 for out_node_id in out_node_ids {
                                     flow_run_node_ids.push_back(NodeRunItem {
-                                        node_id: out_node_id.clone(),
+                                        node_id: *out_node_id,
                                         msg: out_msg.clone(),
                                     });
                                 }
