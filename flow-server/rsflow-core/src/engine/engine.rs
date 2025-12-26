@@ -1,5 +1,5 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo,
+    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeOutput,
     NodeOutputIds, NodeRunItem, Value,
 };
 use crate::flow::{
@@ -171,29 +171,48 @@ impl Engine {
             while let Some(node_run_item) = flow_run_node_ids.pop_front() {
                 let Some(node) = nodes.get(&node_run_item.node_id) else {
                     eprintln!("Node {} not found", node_run_item.node_id);
-                    break;
+                    continue;
                 };
                 match node.on_input(&ctx, &node_run_item.msg).await {
-                    Ok(msgs) => {
+                    Ok(node_output) => {
                         ctx.run_node_ids.push(node_run_item.node_id);
-                        // 无消息直接结束执行
-                        if msgs.is_empty() {
-                            break;
-                        }
-                        // 获取执行node的输出节点定义
-                        let out_ids = node.info().output_ids;
-                        // 将后续节点推入队列
-                        for (index, out_msg) in msgs.iter().enumerate() {
-                            if let Some(out_node_ids) = out_ids.get(&(index as u8)) {
-                                for out_node_id in out_node_ids {
-                                    flow_run_node_ids.push_back(NodeRunItem {
-                                        node_id: *out_node_id,
-                                        msg: out_msg.clone(),
-                                    });
+                        match node_output {
+                            NodeOutput::None => continue,
+                            NodeOutput::One((prot, msg)) => {
+                                // 获取执行node的输出节点定义
+                                let out_ids = node.info().output_ids;
+                                if let Some(out_node_ids) = out_ids.get(&prot) {
+                                    if out_node_ids.len() == 1 {
+                                        let out_node_id = &out_node_ids[0];
+                                        flow_run_node_ids.push_back(NodeRunItem {
+                                            node_id: *out_node_id,
+                                            msg: msg,
+                                        });
+                                    } else {
+                                        for out_node_id in out_node_ids {
+                                            flow_run_node_ids.push_back(NodeRunItem {
+                                                node_id: *out_node_id,
+                                                msg: msg.clone(),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                            NodeOutput::Many(msgs) => {
+                                // 获取执行node的输出节点定义
+                                let out_ids = node.info().output_ids;
+                                for (_, (prot,msg)) in msgs.iter().enumerate() {
+                                    if let Some(out_node_ids) = out_ids.get(prot) {
+                                        for out_node_id in out_node_ids {
+                                            flow_run_node_ids.push_back(NodeRunItem {
+                                                node_id: out_node_id.clone(),
+                                                msg: msg.clone(),
+                                            });
+                                        }
+                                    }
                                 }
                             }
                         }
-
                     }
                     Err(err) => {
                         eprintln!(
@@ -202,7 +221,7 @@ impl Engine {
                             node.info().name,
                             err
                         );
-                        break;
+                        continue;
                     }
                 }
             }

@@ -1,5 +1,5 @@
 use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, Value,
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeOutput, Value,
 };
 use std::sync::Arc;
 
@@ -24,8 +24,8 @@ impl Node for InjectNode {
             }
         });
     }
-    async fn on_input(&self, _: &FlowContext, msg: &Value) -> Result<Vec<Value>, NodeError> {
-        Ok(vec![msg.clone()])
+    async fn on_input(&self, _: &FlowContext, msg: &Value) -> Result<NodeOutput, NodeError> {
+        Ok(NodeOutput::One((0,msg.clone())))
     }
 }
 

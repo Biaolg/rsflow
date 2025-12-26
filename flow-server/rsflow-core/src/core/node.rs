@@ -21,6 +21,13 @@ pub struct NodeRunItem {
     pub msg: Value,
 }
 
+//节点输出变体
+pub enum NodeOutput {
+    None,
+    One((u8, Value)),
+    Many(Vec<(u8, Value)>),
+}
+
 // 节点基本信息定义
 #[derive(Debug, Clone)]
 pub struct NodeInfo {
@@ -42,7 +49,7 @@ pub trait Node: Send + Sync {
     async fn on_start(&self, sender: EngineSender);
 
     /// 节点接收到输入时的处理
-    async fn on_input(&self, ctx: &FlowContext, msg: &Value) -> Result<Vec<Value>, NodeError>;
+    async fn on_input(&self, ctx: &FlowContext, msg: &Value) -> Result<NodeOutput, NodeError>;
 }
 
 #[async_trait::async_trait]
