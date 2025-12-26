@@ -1,9 +1,10 @@
+use crate::core::{EngineConfig, Value};
 use serde::Deserialize;
-use crate::core::value::Value;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct FlowMod {
+    pub config: EngineConfig,
     pub flow: Vec<Flow>,
 }
 

@@ -1,5 +1,12 @@
 use crate::core::{FlowContext, Value};
+use serde::Deserialize;
 use uuid::Uuid;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct EngineConfig {
+    pub msg_len: usize,
+}
+
 // 前向声明 EngineSender，避免循环依赖
 pub struct EngineSender {
     pub tx: tokio::sync::mpsc::Sender<EngineMessage>,

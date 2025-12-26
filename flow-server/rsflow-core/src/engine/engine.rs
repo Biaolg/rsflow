@@ -28,7 +28,6 @@ impl Engine {
     /// ⚠️ 只能通过 Builder 调用
     pub async fn create_with_builders(
         flow_file_path: &str,
-        msg_len: Option<usize>,
         builders: BuilderMap,
     ) -> Result<Arc<Self>, std::io::Error> {
         use std::io::ErrorKind;
@@ -111,7 +110,7 @@ impl Engine {
             }
         }
 
-        let (tx, rx) = mpsc::channel(msg_len.unwrap_or(100));
+        let (tx, rx) = mpsc::channel(flow_mod.config.msg_len);
 
         Ok(Arc::new(Self {
             flow_mod,

@@ -27,12 +27,10 @@ impl EngineBuilder {
     /// 构建 Engine
     pub async fn build(
         self,
-        flow_file_path: &str,
-        msg_len: Option<usize>,
+        flow_file_path: &str
     ) -> std::result::Result<std::sync::Arc<crate::engine::engine::Engine>, std::io::Error> {
         crate::engine::engine::Engine::create_with_builders(
             flow_file_path,
-            msg_len,
             self.builders,
         )
         .await

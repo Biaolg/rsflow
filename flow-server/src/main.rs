@@ -7,7 +7,7 @@ use rsflow_core::EngineBuilder;
 async fn main() {
     // 使用自动注册函数
     let engine = auto_node_registry::register_all_nodes_to_builder(EngineBuilder::new())
-        .build("./data/flow.json", Some(100))
+        .build("./data/flow.json")
         .await
         .expect("Failed to build engine");
 
