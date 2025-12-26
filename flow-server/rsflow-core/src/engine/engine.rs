@@ -1,6 +1,6 @@
 use crate::core::{
     EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeOutput,
-    NodeOutputIds, NodeRunItem, Value,
+    NodePorts, NodeRunItem, Value,
 };
 use crate::flow::{
     FlowMod, parse_flow_all_node_types, parse_flow_all_nodes, parse_flow_file, validate_flow,
@@ -79,11 +79,19 @@ impl Engine {
         let mut nodes: NodeMap = HashMap::new();
         for flow_node in &flow_nodes {
             if let Some(factory) = factories.get(&flow_node.node_type) {
+
+                // 将 FlowNodeInput 转换为 NodePorts
+                let inputs: NodePorts = flow_node
+                    .input
+                    .iter()
+                    .map(|in_| (in_.port, in_.nodes.clone()))
+                    .collect();
+
                 // 将 FlowNode 转换为 NodeInfo
-                let outputs: NodeOutputIds = flow_node
+                let outputs: NodePorts = flow_node
                     .output
                     .iter()
-                    .map(|out| (out.prot, out.nodes.clone()))
+                    .map(|out| (out.port, out.nodes.clone()))
                     .collect();
 
                 let node_info = NodeInfo {
@@ -92,8 +100,8 @@ impl Engine {
                     node_type: flow_node.node_type.clone(),
                     description: flow_node.description.clone(),
                     config: flow_node.config.clone(),
-                    input_ids: flow_node.input.clone(),
-                    output_ids: outputs,
+                    input_ports: inputs,
+                    output_ports: outputs,
                 };
 
                 match factory.create(node_info).await {
@@ -177,10 +185,10 @@ impl Engine {
                         ctx.run_node_ids.push(node_run_item.node_id);
                         match node_output {
                             NodeOutput::None => continue,
-                            NodeOutput::One((prot, msg)) => {
+                            NodeOutput::One((port, msg)) => {
                                 // 获取执行node的输出节点定义
-                                let out_ids = node.info().output_ids;
-                                if let Some(out_node_ids) = out_ids.get(&prot) {
+                                let out_ids = node.info().output_ports;
+                                if let Some(out_node_ids) = out_ids.get(&port) {
                                     if out_node_ids.len() == 1 {
                                         let out_node_id = &out_node_ids[0];
                                         flow_run_node_ids.push_back(NodeRunItem {
@@ -199,9 +207,9 @@ impl Engine {
                             }
                             NodeOutput::Many(msgs) => {
                                 // 获取执行node的输出节点定义
-                                let out_ids = node.info().output_ids;
-                                for (_, (prot,msg)) in msgs.iter().enumerate() {
-                                    if let Some(out_node_ids) = out_ids.get(prot) {
+                                let out_ids = node.info().output_ports;
+                                for (_, (port,msg)) in msgs.iter().enumerate() {
+                                    if let Some(out_node_ids) = out_ids.get(port) {
                                         for out_node_id in out_node_ids {
                                             flow_run_node_ids.push_back(NodeRunItem {
                                                 node_id: out_node_id.clone(),

@@ -3,9 +3,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
-// 节点端点定义
-pub type NodePorts = HashMap<u8, Vec<Uuid>>;
-
 #[derive(Debug)]
 pub enum NodeError {
     InvalidInput(String),
@@ -16,6 +13,21 @@ pub enum NodeError {
     Cancelled,
 }
 
+// 节点输出定义
+pub type NodePorts = HashMap<u8, Vec<Uuid>>;
+// 节点消息执行最小单位
+pub struct NodeRunItem {
+    pub node_id: Uuid,
+    pub msg: Value,
+}
+
+//节点输出变体
+pub enum NodeOutput {
+    None,
+    One((u8, Value)),
+    Many(Vec<(u8, Value)>),
+}
+
 // 节点基本信息定义
 #[derive(Debug, Clone)]
 pub struct NodeInfo {
@@ -24,20 +36,8 @@ pub struct NodeInfo {
     pub node_type: String,
     pub description: String,
     pub config: Value,
-    pub input_ports: NodePorts,
+    pub input_ports: Vec<Uuid>,
     pub output_ports: NodePorts,
-}
-
-// 节点消息执行最小单位
-pub struct NodeRunItem {
-    pub node_id: Uuid,
-    pub msg: Value,
-}
-//节点输出变体
-pub enum NodeOutput {
-    None,
-    One((u8, Value)),
-    Many(Vec<(u8, Value)>),
 }
 
 #[async_trait::async_trait]

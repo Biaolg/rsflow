@@ -20,7 +20,7 @@
                     "input": [],
                     "output": [
                         {
-                            "prot": 0,
+                            "port": 0,
                             "nodes": [
                                 "0c72f3d3-3b9b-45db-866e-3615811940fe"
                             ]
@@ -37,11 +37,16 @@
                         "command": "echo 'hello2'"
                     },
                     "input": [
-                        "1a67b96a-d211-4e6d-a3ee-d711bac69ce7"
+                        {
+                            "port": 0,
+                            "nodes": [
+                                "1a67b96a-d211-4e6d-a3ee-d711bac69ce7"
+                            ]
+                        }
                     ],
                     "output": [
                         {
-                            "prot": 0,
+                            "port": 0,
                             "nodes": [
                                 "ab3f1685-b409-42ee-bf49-793ca63f5de3",
                                 "ab3f1685-b409-42ee-bf49-793ca63f5de4"
@@ -59,7 +64,12 @@
                         "command": "echo 'hello3'"
                     },
                     "input": [
-                        "0c72f3d3-3b9b-45db-866e-3615811940fe"
+                        {
+                            "port": 0,
+                            "nodes": [
+                                "0c72f3d3-3b9b-45db-866e-3615811940fe"
+                            ]
+                        }
                     ],
                     "output": []
                 },
@@ -70,7 +80,12 @@
                     "description": "This is the first Log step",
                     "config": {},
                     "input": [
-                        "0c72f3d3-3b9b-45db-866e-3615811940fe"
+                        {
+                            "port": 0,
+                            "nodes": [
+                                "0c72f3d3-3b9b-45db-866e-3615811940fe"
+                            ]
+                        }
                     ],
                     "output": []
                 }

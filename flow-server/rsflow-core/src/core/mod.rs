@@ -7,6 +7,6 @@ pub use engine::{EngineConfig, EngineMessage, EngineSender};
 pub use flow::FlowContext;
 
 pub use node::{
-    Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeOutput, NodeOutputIds, NodeRunItem,
+    Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeOutput, NodePorts, NodeRunItem,
 };
 pub use value::Value;

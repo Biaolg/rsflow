@@ -17,8 +17,8 @@ pub struct Flow {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct FlowNodeOutput {
-    pub prot: u8,
+pub struct FlowNodePort {
+    pub port: u8,
     pub nodes: Vec<Uuid>,
 }
 
@@ -29,6 +29,6 @@ pub struct FlowNode {
     pub node_type: String,
     pub description: String,
     pub config: Value,
-    pub input: Vec<Uuid>,
-    pub output: Vec<FlowNodeOutput>,
+    pub input: Vec<FlowNodePort>,
+    pub output: Vec<FlowNodePort>,
 }
