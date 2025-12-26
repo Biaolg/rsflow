@@ -1,6 +1,6 @@
 use crate::core::{
     EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
-    NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem,
+    NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem, Value,
 };
 use crate::flow::{
     FlowMod, parse_flow_all_node_types, parse_flow_all_nodes, parse_flow_file, validate_flow,
@@ -158,6 +158,14 @@ impl Engine {
                 EngineMessage::RunFlow { ctx, start_node } => {
                     self.flow_run(ctx, start_node);
                 }
+                EngineMessage::NodeEvent {
+                    node_id,
+                    ctx,
+                    event_type,
+                    event_data,
+                } => {
+                    self.node_event(node_id, event_type, ctx, event_data);
+                }
                 EngineMessage::Stop => {
                     println!("Engine stopping...");
                     break;
@@ -166,6 +174,18 @@ impl Engine {
         }
 
         println!("Engine stopped.");
+    }
+
+    /// 节点消息事件
+    fn node_event(&self, node_id: Uuid, event_type: String, ctx: FlowContext, event_data: Value) {
+        let nodes: Nodes = Arc::clone(&self.nodes);
+        tokio::spawn(async move {
+            if let Some(node) = nodes.get(&node_id) {
+                if let Err(err) = node.event(&event_type, &ctx, &event_data).await {
+                    eprintln!("Node event error: {:?}", err);
+                }
+            }
+        });
     }
 
     /// 核心调度逻辑

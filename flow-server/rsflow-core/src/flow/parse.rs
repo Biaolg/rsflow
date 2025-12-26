@@ -7,8 +7,12 @@ use std::io::{self, BufReader};
 pub fn parse_flow_file(file_path: &str) -> Result<FlowMod, io::Error> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
-    let flow_mod = serde_json::from_reader(reader)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("JSON parse error: {}", e)))?;
+    let flow_mod = serde_json::from_reader(reader).map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("JSON parse error: {}", e),
+        )
+    })?;
     Ok(flow_mod)
 }
 
@@ -37,7 +41,7 @@ pub fn validate_flow(flow_mod: &FlowMod) -> Result<(), String> {
             }
         }
     }
-    
+
     // 检查输出连接的节点是否存在
     let all_node_ids: HashSet<_> = node_ids;
     for flow in &flow_mod.flow {
@@ -45,12 +49,15 @@ pub fn validate_flow(flow_mod: &FlowMod) -> Result<(), String> {
             for output in &node.output {
                 for next_item in &output.nodes {
                     if !all_node_ids.contains(&next_item.id) {
-                        return Err(format!("Node {} references non-existent node {}", node.id, next_item.id));
+                        return Err(format!(
+                            "Node {} references non-existent node {}",
+                            node.id, next_item.id
+                        ));
                     }
                 }
             }
         }
     }
-    
+
     Ok(())
 }

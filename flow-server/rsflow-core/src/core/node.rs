@@ -61,7 +61,7 @@ pub trait Node: Send + Sync {
         &self,
         event_type: &str,
         ctx: &FlowContext,
-        msg: &Value,
+        event_data: &Value,
     ) -> Result<(), NodeError>;
 
     /// 节点接收到输入时的处理

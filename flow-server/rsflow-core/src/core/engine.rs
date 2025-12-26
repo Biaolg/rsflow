@@ -35,5 +35,11 @@ pub enum EngineMessage {
         ctx: FlowContext,
         start_node: NodeRunItem,
     },
+    NodeEvent {
+        node_id: Uuid,
+        ctx: FlowContext,
+        event_type: String,
+        event_data: Value,
+    },
     Stop,
 }
