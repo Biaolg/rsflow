@@ -1,5 +1,6 @@
-use crate::core::{FlowContext, NodeRunItem, Value};
+use crate::core::{FlowContext, FlowListeners, NodeRunItem, Value};
 use serde::Deserialize;
+use std::sync::Arc;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -7,8 +8,6 @@ pub struct EngineConfig {
     pub msg_len: usize,
 }
 
-// 引擎消息定义
-#[derive(Debug)]
 pub enum EngineMessage {
     RunFlow {
         ctx: FlowContext,
@@ -32,6 +31,7 @@ impl EngineSender {
         let ctx = FlowContext {
             id: Uuid::new_v4(),
             run_node_ids: vec![],
+            listeners: Arc::new(FlowListeners::new()),
         };
         let _ = self
             .tx
