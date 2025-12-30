@@ -25,6 +25,11 @@ pub struct Engine {
 }
 
 impl Engine {
+    
+    pub fn get_mod(&self) -> &FlowMod {
+        &self.flow_mod
+    }
+
     /// ⚠️ 只能通过 Builder 调用
     pub async fn create_with_builders(
         flow_file_path: &str,
