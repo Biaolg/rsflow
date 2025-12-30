@@ -1,5 +1,5 @@
 use rsflow_core::{
-    EngineContext, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
     NodeOutput, Value,
 };
 use std::sync::Arc;
@@ -26,7 +26,7 @@ impl Node for ShellNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, _: EngineContext) {
+    async fn init(&self, _: EngineSender) {
         // 初始化逻辑
     }
     async fn event(&self, _: &str, _: Value, _: &FlowContext) -> Result<(), NodeError> {

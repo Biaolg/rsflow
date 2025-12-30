@@ -1,4 +1,4 @@
-use crate::core::{EngineContext, FlowContext, Value};
+use crate::core::{EngineSender, FlowContext, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -29,8 +29,8 @@ pub struct NodeInfo {
     pub output_ports: NodeOutputPorts,
 }
 
-// 节点消息执行最小单位
-#[derive(Debug, Clone)]
+// 节点执行最小单位
+#[derive(Debug)]
 pub struct NodeRunItem {
     pub node_id: Uuid,
     pub node_input: NodeInput,
@@ -54,7 +54,7 @@ pub trait Node: Send + Sync {
     fn info(&self) -> NodeInfo;
 
     /// 初始化节点
-    async fn init(&self, sender: EngineContext);
+    async fn init(&self, sender: EngineSender);
 
     /// 节点接收到事件时的处理
     async fn event(

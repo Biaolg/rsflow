@@ -1,5 +1,5 @@
 use rsflow_core::{
-    EngineContext, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
     NodeOutput, NodeRunItem, Value,
 };
 use std::sync::Arc;
@@ -13,7 +13,7 @@ impl Node for InjectNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, sender: EngineContext) {
+    async fn init(&self, sender: EngineSender) {
         let node_id = self.info.id;
 
         tokio::spawn(async move {

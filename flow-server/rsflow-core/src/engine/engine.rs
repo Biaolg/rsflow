@@ -1,5 +1,5 @@
 use crate::core::{
-    EngineMessage, EngineContext, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
+    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
     NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem, Value,
 };
 use crate::flow::{
@@ -142,7 +142,7 @@ impl Engine {
 
         // 初始化节点
         for (node_id, node) in self.nodes.iter() {
-            let engine_ctx = EngineContext {
+            let engine_ctx = EngineSender {
                 tx: self.sender.clone(),
             };
             println!("Initializing node: {} - {}", node_id, node.info().name);
