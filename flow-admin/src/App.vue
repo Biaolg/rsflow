@@ -56,7 +56,7 @@ watch(
   <a-layout>
     <!-- 顶部导航 -->
     <a-layout-header>
-      <div class="logo">Flow Admin</div>
+      <div class="logo">RSFlow</div>
       <a-menu 
         :selected-keys="[currentKey]" 
         mode="horizontal" 

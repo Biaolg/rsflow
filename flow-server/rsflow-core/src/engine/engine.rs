@@ -1,5 +1,5 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
+    EngineMessage, EngineContext, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
     NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem, Value,
 };
 use crate::flow::{
@@ -142,11 +142,11 @@ impl Engine {
 
         // 初始化节点
         for (node_id, node) in self.nodes.iter() {
-            let sender = EngineSender {
+            let engine_ctx = EngineContext {
                 tx: self.sender.clone(),
             };
             println!("Initializing node: {} - {}", node_id, node.info().name);
-            node.init(sender).await;
+            node.init(engine_ctx).await;
         }
 
         println!("Engine started. Waiting for messages...");
@@ -179,9 +179,10 @@ impl Engine {
     /// 节点消息事件
     fn node_event(&self, node_id: Uuid, event_type: String, ctx: FlowContext, event_data: Value) {
         let nodes: Nodes = Arc::clone(&self.nodes);
+
         tokio::spawn(async move {
             if let Some(node) = nodes.get(&node_id) {
-                if let Err(err) = node.event(&event_type, &ctx, &event_data).await {
+                if let Err(err) = node.event(&event_type, event_data, &ctx).await {
                     eprintln!("Node event error: {:?}", err);
                 }
             }
@@ -201,7 +202,7 @@ impl Engine {
                     eprintln!("Node {} not found", node_run_item.node_id);
                     continue;
                 };
-                match node.input(&ctx, &node_run_item.node_input).await {
+                match node.input(node_run_item.node_input, &ctx).await {
                     Ok(node_output) => {
                         ctx.run_node_ids.push(node_run_item.node_id);
                         match node_output {
@@ -216,7 +217,7 @@ impl Engine {
                                             node_id: *out_node_id,
                                             node_input: NodeInput {
                                                 port: *out_node_port,
-                                                msg: msg.clone(),
+                                                msg: msg,
                                             },
                                         });
                                     } else {

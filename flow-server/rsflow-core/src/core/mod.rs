@@ -3,7 +3,7 @@ pub mod flow;
 pub mod node;
 pub mod value;
 
-pub use engine::{EngineConfig, EngineMessage, EngineSender};
+pub use engine::{EngineConfig, EngineMessage, EngineContext};
 pub use flow::FlowContext;
 
 pub use node::{

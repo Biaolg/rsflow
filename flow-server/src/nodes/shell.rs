@@ -1,5 +1,5 @@
 use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    EngineContext, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
     NodeOutput, Value,
 };
 use std::sync::Arc;
@@ -26,19 +26,19 @@ impl Node for ShellNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, _: EngineSender) {
+    async fn init(&self, _: EngineContext) {
         // 初始化逻辑
     }
-    async fn event(&self, _: &str, _: &FlowContext, _: &Value) -> Result<(), NodeError> {
+    async fn event(&self, _: &str, _: Value, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
     async fn input(
         &self,
+        node_input: NodeInput,
         _: &FlowContext,
-        node_input: &NodeInput,
     ) -> Result<NodeOutput, NodeError> {
         // 从 input 或 config 获取 command
-        let command_str = match node_input.msg.clone() {
+        let command_str = match node_input.msg {
             Value::Object(map) => map.get("command").and_then(|v| match v {
                 Value::String(s) => Some(s.clone()),
                 _ => None,
