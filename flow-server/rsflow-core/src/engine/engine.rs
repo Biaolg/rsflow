@@ -197,9 +197,10 @@ impl Engine {
     /// 核心调度逻辑
     fn flow_run(&self, mut ctx: FlowContext, start_node: NodeRunItem) {
         let nodes: Nodes = Arc::clone(&self.nodes);
+        let sender = self.sender.clone();
+        
         tokio::spawn(async move {
             let mut flow_run_node_ids: VecDeque<NodeRunItem> = VecDeque::new();
-
             flow_run_node_ids.push_back(start_node);
 
             while let Some(node_run_item) = flow_run_node_ids.pop_front() {
@@ -207,6 +208,7 @@ impl Engine {
                     eprintln!("Node {} not found", node_run_item.node_id);
                     continue;
                 };
+                
                 match node.input(node_run_item.node_input, &ctx).await {
                     Ok(node_output) => {
                         ctx.run_node_ids.push(node_run_item.node_id);
@@ -217,6 +219,7 @@ impl Engine {
                                 let out_ids = node.info().output_ports;
                                 if let Some(out_node_ids) = out_ids.get(&port) {
                                     if out_node_ids.len() == 1 {
+                                        // 单分支，继续当前flow执行
                                         let (out_node_id, out_node_port) = &out_node_ids[0];
                                         flow_run_node_ids.push_back(NodeRunItem {
                                             node_id: *out_node_id,
@@ -226,14 +229,31 @@ impl Engine {
                                             },
                                         });
                                     } else {
+                                        // 多分支，为每个分支通过sender发送RunFlow消息
                                         for (out_node_id, out_node_port) in out_node_ids {
-                                            flow_run_node_ids.push_back(NodeRunItem {
+                                            // 复制当前上下文，保留执行路径
+                                            let branch_ctx = FlowContext {
+                                                id: Uuid::new_v4(),
+                                                run_node_ids: ctx.run_node_ids.clone(),
+                                                listeners: Arc::clone(&ctx.listeners),
+                                            };
+                                            
+                                            // 创建新的节点运行项
+                                            let branch_node_run_item = NodeRunItem {
                                                 node_id: *out_node_id,
                                                 node_input: NodeInput {
                                                     port: *out_node_port,
                                                     msg: msg.clone(),
                                                 },
-                                            });
+                                            };
+                                            
+                                            // 通过sender发送RunFlow消息，让引擎调度新的flow_run
+                                            if let Err(e) = sender.send(EngineMessage::RunFlow {
+                                                ctx: branch_ctx,
+                                                start_node: branch_node_run_item,
+                                            }).await {
+                                                eprintln!("Failed to send RunFlow message: {:?}", e);
+                                            }
                                         }
                                     }
                                 }
@@ -244,13 +264,28 @@ impl Engine {
                                 for (_, (port, msg)) in msgs.iter().enumerate() {
                                     if let Some(out_node_ids) = out_ids.get(port) {
                                         for (out_node_id, out_node_port) in out_node_ids {
-                                            flow_run_node_ids.push_back(NodeRunItem {
+                                            // 为每个输出节点通过sender发送RunFlow消息
+                                            let branch_ctx = FlowContext {
+                                                id: Uuid::new_v4(),
+                                                run_node_ids: ctx.run_node_ids.clone(),
+                                                listeners: Arc::clone(&ctx.listeners),
+                                            };
+                                            
+                                            let branch_node_run_item = NodeRunItem {
                                                 node_id: *out_node_id,
                                                 node_input: NodeInput {
                                                     port: *out_node_port,
                                                     msg: msg.clone(),
                                                 },
-                                            });
+                                            };
+                                            
+                                            // 通过sender发送RunFlow消息，让引擎调度新的flow_run
+                                            if let Err(e) = sender.send(EngineMessage::RunFlow {
+                                                ctx: branch_ctx,
+                                                start_node: branch_node_run_item,
+                                            }).await {
+                                                eprintln!("Failed to send RunFlow message: {:?}", e);
+                                            }
                                         }
                                     }
                                 }
