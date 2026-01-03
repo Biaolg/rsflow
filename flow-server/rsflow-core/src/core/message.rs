@@ -1,4 +1,4 @@
-use crate::core::{FlowContext, NodeRunItem, Value};
+use crate::core::{FlowContext, NodeRunItem, Payload};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -16,7 +16,7 @@ pub enum EngineMessage {
         node_id: Uuid,
         ctx: FlowContext,
         event_type: String,
-        event_data: Value,
+        payload: Payload,
     },
     Stop,
 }

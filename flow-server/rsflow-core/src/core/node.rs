@@ -1,4 +1,4 @@
-use crate::core::{EngineSender, FlowContext, Value};
+use crate::core::{EngineSender, FlowContext, Payload, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -19,14 +19,14 @@ pub struct NodeRunItem {
 #[derive(Debug, Clone)]
 pub struct NodeInput {
     pub port: u8,
-    pub msg: Value,
+    pub msg: Payload,
 }
 
 // 节点输出变体
 pub enum NodeOutput {
     None,
-    One((u8, Value)),
-    Many(Vec<(u8, Value)>),
+    One((u8, Payload)),
+    Many(Vec<(u8, Payload)>),
 }
 
 // 节点基本信息定义
@@ -65,12 +65,16 @@ pub trait Node: Send + Sync {
     async fn event(
         &self,
         event_type: &str,
-        event_data: Value,
-        ctx: &FlowContext
+        payload: Payload,
+        ctx: &FlowContext,
     ) -> Result<(), NodeError>;
 
     /// 节点接收到输入时的处理
-    async fn input(&self,node_input: NodeInput,ctx: &FlowContext) -> Result<NodeOutput, NodeError>;
+    async fn input(
+        &self,
+        node_input: NodeInput,
+        ctx: &FlowContext,
+    ) -> Result<NodeOutput, NodeError>;
 }
 
 // ===== 工厂模式trait =====

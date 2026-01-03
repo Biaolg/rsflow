@@ -1,6 +1,6 @@
 use rsflow_core::{
     EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
-    NodeOutput, Value,
+    NodeOutput, Payload, Value,
 };
 use std::sync::Arc;
 use tokio::process::Command;
@@ -29,17 +29,16 @@ impl Node for ShellNode {
     async fn init(&self, _: EngineSender) {
         // 初始化逻辑
     }
-    async fn event(&self, _: &str, _: Value, _: &FlowContext) -> Result<(), NodeError> {
+    async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
-    async fn input(
-        &self,
-        node_input: NodeInput,
-        _: &FlowContext,
-    ) -> Result<NodeOutput, NodeError> {
+    async fn input(&self, node_input: NodeInput, _: &FlowContext) -> Result<NodeOutput, NodeError> {
         // 从 input 或 config 获取 command
         let command_str = match node_input.msg {
-            Value::Object(map) => map.get("command").and_then(|v| match v {
+            Payload {
+                value: Value::Object(map),
+                ..
+            } => map.get("command").and_then(|v| match v {  
                 Value::String(s) => Some(s.clone()),
                 _ => None,
             }),
@@ -79,7 +78,7 @@ impl Node for ShellNode {
 
         Ok(NodeOutput::One((
             0,
-            Value::String(String::from_utf8_lossy(&output.stdout).to_string()),
+            Payload::new(Value::String(String::from_utf8_lossy(&output.stdout).to_string()))
         )))
     }
 }

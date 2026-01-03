@@ -1,6 +1,7 @@
-use std::collections::HashMap;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -19,7 +20,7 @@ pub enum Value {
 impl Serialize for Value {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer, 
+        S: Serializer,
     {
         match self {
             Value::NULL => serializer.serialize_none(),
@@ -42,35 +43,35 @@ impl<'de> Deserialize<'de> for Value {
         D: Deserializer<'de>,
     {
         struct ValueVisitor;
-        
+
         impl<'de> de::Visitor<'de> for ValueVisitor {
             type Value = Value;
-            
+
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str("any valid JSON value")
             }
-            
+
             fn visit_none<E>(self) -> Result<Value, E>
             where
                 E: de::Error,
             {
                 Ok(Value::NULL)
             }
-            
+
             fn visit_unit<E>(self) -> Result<Value, E>
             where
                 E: de::Error,
             {
                 Ok(Value::NULL)
             }
-            
+
             fn visit_bool<E>(self, v: bool) -> Result<Value, E>
             where
                 E: de::Error,
             {
                 Ok(Value::Bool(v))
             }
-            
+
             fn visit_i64<E>(self, v: i64) -> Result<Value, E>
             where
                 E: de::Error,
@@ -81,7 +82,7 @@ impl<'de> Deserialize<'de> for Value {
                     Ok(Value::Long(v))
                 }
             }
-            
+
             fn visit_u64<E>(self, v: u64) -> Result<Value, E>
             where
                 E: de::Error,
@@ -94,21 +95,21 @@ impl<'de> Deserialize<'de> for Value {
                     Err(de::Error::custom("integer too large"))
                 }
             }
-            
+
             fn visit_f32<E>(self, v: f32) -> Result<Value, E>
             where
                 E: de::Error,
             {
                 Ok(Value::Float(v))
             }
-            
+
             fn visit_f64<E>(self, v: f64) -> Result<Value, E>
             where
                 E: de::Error,
             {
                 Ok(Value::Double(v))
             }
-            
+
             fn visit_str<E>(self, v: &str) -> Result<Value, E>
             where
                 E: de::Error,
@@ -120,7 +121,7 @@ impl<'de> Deserialize<'de> for Value {
                     Ok(Value::String(v.to_string()))
                 }
             }
-            
+
             fn visit_string<E>(self, v: String) -> Result<Value, E>
             where
                 E: de::Error,
@@ -132,34 +133,36 @@ impl<'de> Deserialize<'de> for Value {
                     Ok(Value::String(v))
                 }
             }
-            
+
             fn visit_seq<A>(self, mut seq: A) -> Result<Value, A::Error>
             where
                 A: de::SeqAccess<'de>,
             {
                 let mut vec = Vec::new();
-                
+
                 while let Some(element) = seq.next_element()? {
                     vec.push(element);
                 }
-                
+
                 Ok(Value::Array(vec))
             }
-            
+
             fn visit_map<A>(self, mut map: A) -> Result<Value, A::Error>
             where
                 A: de::MapAccess<'de>,
             {
                 let mut hash_map = HashMap::new();
-                
+
                 while let Some((key, value)) = map.next_entry()? {
                     hash_map.insert(key, value);
                 }
-                
+
                 Ok(Value::Object(hash_map))
             }
         }
-        
+
         deserializer.deserialize_any(ValueVisitor)
     }
 }
+
+

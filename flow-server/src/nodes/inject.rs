@@ -1,6 +1,5 @@
 use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
-    NodeOutput, NodeRunItem, Value,
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, NodeRunItem, Payload, Value
 };
 use std::sync::Arc;
 
@@ -26,7 +25,7 @@ impl Node for InjectNode {
                         node_id,
                         node_input: NodeInput {
                             port: 0,
-                            msg: Value::Int(1),
+                            msg: Payload::new(Value::String("hello".to_string())),
                         },
                     })
                     .await; // ✅ 使用复制的值
@@ -34,7 +33,7 @@ impl Node for InjectNode {
         });
     }
 
-    async fn event(&self, _: &str, _: Value, _: &FlowContext) -> Result<(), NodeError> {
+    async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
 

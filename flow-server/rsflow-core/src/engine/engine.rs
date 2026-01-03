@@ -1,10 +1,9 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeFactory, NodeInfo, NodeInput,
-    NodeInputPorts, NodeOutput, NodeOutputPorts, NodeRunItem, Value,
+    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeInput, NodeOutput,
+    NodeRunItem, Payload,
 };
-use crate::flow::{
-    FlowMod, parse_flow_all_node_types, parse_flow_all_nodes, parse_flow_file, validate_flow,
-};
+use crate::engine::flow_processor::FlowProcessor;
+use crate::flow::FlowMod;
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -12,7 +11,6 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
 use uuid::Uuid;
 
-type FactoryMap = HashMap<String, Box<dyn NodeFactory>>;
 type NodeMap = HashMap<Uuid, Arc<dyn Node + Send + Sync>>;
 type Nodes = Arc<NodeMap>;
 type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
@@ -25,7 +23,6 @@ pub struct Engine {
 }
 
 impl Engine {
-    
     pub fn get_mod(&self) -> &FlowMod {
         &self.flow_mod
     }
@@ -35,101 +32,18 @@ impl Engine {
         flow_file_path: &str,
         builders: BuilderMap,
     ) -> Result<Arc<Self>, std::io::Error> {
-        use std::io::ErrorKind;
+        // 解析流程文件并验证
+        let flow_mod = FlowProcessor::parse_flow_file(flow_file_path)?;
 
-        // 解析 flow
-        let flow_mod = parse_flow_file(flow_file_path)?;
+        // 提取节点和节点类型
+        let flow_nodes = FlowProcessor::extract_nodes(&flow_mod);
+        let node_types = FlowProcessor::extract_node_types(&flow_nodes);
 
-        // 验证 flow 配置
-        if let Err(err) = validate_flow(&flow_mod) {
-            return Err(std::io::Error::new(
-                ErrorKind::InvalidData,
-                format!("Flow validation failed: {}", err),
-            ));
-        }
+        // 将构建器转换为工厂
+        let factories = FlowProcessor::builders_to_factories(builders, &node_types).await?;
 
-        let flow_nodes = parse_flow_all_nodes(flow_mod.clone());
-        let node_types = parse_flow_all_node_types(flow_nodes.clone());
-
-        // builder -> factory
-        let mut factories: FactoryMap = HashMap::new();
-        let mut missing_builders = Vec::new();
-
-        for t in &node_types {
-            if let Some(builder) = builders.get(t) {
-                match builder.register().await {
-                    Ok(factory) => {
-                        factories.insert(t.clone(), factory);
-                    }
-                    Err(err) => {
-                        return Err(std::io::Error::new(
-                            ErrorKind::Other,
-                            format!("Failed to register factory for node type {}: {:?}", t, err),
-                        ));
-                    }
-                }
-            } else {
-                missing_builders.push(t.clone());
-            }
-        }
-
-        if !missing_builders.is_empty() {
-            return Err(std::io::Error::new(
-                ErrorKind::InvalidData,
-                format!("Missing builders for node types: {:?}", missing_builders),
-            ));
-        }
-
-        // factory -> node
-        let mut nodes: NodeMap = HashMap::new();
-        for flow_node in &flow_nodes {
-            if let Some(factory) = factories.get(&flow_node.node_type) {
-                // 将 FlowNodeInput 转换为 NodeInputPorts
-                let inputs: NodeInputPorts = flow_node
-                    .input
-                    .iter()
-                    .map(|in_| (in_.port, in_.nodes.clone()))
-                    .collect();
-
-                // 将 FlowNode 转换为 NodeInfo
-                let outputs: NodeOutputPorts = flow_node
-                    .output
-                    .iter()
-                    .map(|out| {
-                        (
-                            out.port,
-                            out.nodes
-                                .clone()
-                                .into_iter()
-                                .map(|item| (item.id, item.port))
-                                .collect(),
-                        )
-                    })
-                    .collect();
-
-                let node_info = NodeInfo {
-                    id: flow_node.id,
-                    name: flow_node.name.clone(),
-                    node_type: flow_node.node_type.clone(),
-                    description: flow_node.description.clone(),
-                    config: flow_node.config.clone(),
-                    input_ports: inputs,
-                    output_ports: outputs,
-                };
-
-                match factory.create(node_info).await {
-                    Ok(node) => {
-                        nodes.insert(flow_node.id, node);
-                    }
-                    Err(err) => {
-                        return Err(std::io::Error::new(
-                            ErrorKind::Other,
-                            format!("Failed to create node {}: {:?}", flow_node.id, err),
-                        ));
-                    }
-                }
-            }
-        }
+        // 创建节点实例
+        let nodes = FlowProcessor::create_nodes_from_flow(flow_nodes, &factories).await?;
 
         let (tx, rx) = mpsc::channel(flow_mod.config.msg_len);
 
@@ -167,9 +81,9 @@ impl Engine {
                     node_id,
                     ctx,
                     event_type,
-                    event_data,
+                    payload,
                 } => {
-                    self.node_event(node_id, event_type, ctx, event_data);
+                    self.node_event(node_id, event_type, ctx, payload);
                 }
                 EngineMessage::Stop => {
                     println!("Engine stopping...");
@@ -182,12 +96,12 @@ impl Engine {
     }
 
     /// 节点消息事件
-    fn node_event(&self, node_id: Uuid, event_type: String, ctx: FlowContext, event_data: Value) {
+    fn node_event(&self, node_id: Uuid, event_type: String, ctx: FlowContext, payload: Payload) {
         let nodes: Nodes = Arc::clone(&self.nodes);
-
+ 
         tokio::spawn(async move {
             if let Some(node) = nodes.get(&node_id) {
-                if let Err(err) = node.event(&event_type, event_data, &ctx).await {
+                if let Err(err) = node.event(&event_type, payload, &ctx).await {
                     eprintln!("Node event error: {:?}", err);
                 }
             }
@@ -198,7 +112,7 @@ impl Engine {
     fn flow_run(&self, mut ctx: FlowContext, start_node: NodeRunItem) {
         let nodes: Nodes = Arc::clone(&self.nodes);
         let sender = self.sender.clone();
-        
+
         tokio::spawn(async move {
             let mut flow_run_node_ids: VecDeque<NodeRunItem> = VecDeque::new();
             flow_run_node_ids.push_back(start_node);
@@ -208,7 +122,7 @@ impl Engine {
                     eprintln!("Node {} not found", node_run_item.node_id);
                     continue;
                 };
-                
+
                 match node.input(node_run_item.node_input, &ctx).await {
                     Ok(node_output) => {
                         ctx.run_node_ids.push(node_run_item.node_id);
@@ -231,7 +145,8 @@ impl Engine {
                                     } else {
                                         // 多分支，第一个分支继续当前线程执行，其余分支发送RunFlow消息
                                         let mut iter = out_node_ids.iter();
-                                        if let Some((first_node_id, first_node_port)) = iter.next() {
+                                        if let Some((first_node_id, first_node_port)) = iter.next()
+                                        {
                                             // 第一个分支继续当前线程执行
                                             flow_run_node_ids.push_back(NodeRunItem {
                                                 node_id: *first_node_id,
@@ -241,15 +156,11 @@ impl Engine {
                                                 },
                                             });
                                         }
-                                        
+
                                         // 其余分支发送RunFlow消息
                                         for (out_node_id, out_node_port) in iter {
-                                            let branch_ctx = FlowContext {
-                                                id: Uuid::new_v4(),
-                                                run_node_ids: ctx.run_node_ids.clone(),
-                                                listeners: Arc::clone(&ctx.listeners),
-                                            };
-                                            
+                                            let branch_ctx = ctx.new_branch();
+
                                             let branch_node_run_item = NodeRunItem {
                                                 node_id: *out_node_id,
                                                 node_input: NodeInput {
@@ -257,12 +168,18 @@ impl Engine {
                                                     msg: msg.clone(),
                                                 },
                                             };
-                                            
-                                            if let Err(e) = sender.send(EngineMessage::RunFlow {
-                                                ctx: branch_ctx,
-                                                start_node: branch_node_run_item,
-                                            }).await {
-                                                eprintln!("Failed to send RunFlow message: {:?}", e);
+
+                                            if let Err(e) = sender
+                                                .send(EngineMessage::RunFlow {
+                                                    ctx: branch_ctx,
+                                                    start_node: branch_node_run_item,
+                                                })
+                                                .await
+                                            {
+                                                eprintln!(
+                                                    "Failed to send RunFlow message: {:?}",
+                                                    e
+                                                );
                                             }
                                         }
                                     }
@@ -286,7 +203,9 @@ impl Engine {
                                         } else {
                                             // 多分支，第一个分支继续当前线程执行，其余分支发送RunFlow消息
                                             let mut iter = out_node_ids.iter();
-                                            if let Some((first_node_id, first_node_port)) = iter.next() {
+                                            if let Some((first_node_id, first_node_port)) =
+                                                iter.next()
+                                            {
                                                 // 第一个分支继续当前线程执行
                                                 flow_run_node_ids.push_back(NodeRunItem {
                                                     node_id: *first_node_id,
@@ -296,15 +215,11 @@ impl Engine {
                                                     },
                                                 });
                                             }
-                                            
+
                                             // 其余分支发送RunFlow消息
                                             for (out_node_id, out_node_port) in iter {
-                                                let branch_ctx = FlowContext {
-                                                    id: Uuid::new_v4(),
-                                                    run_node_ids: ctx.run_node_ids.clone(),
-                                                    listeners: Arc::clone(&ctx.listeners),
-                                                };
-                                                
+                                                let branch_ctx = ctx.new_branch();
+
                                                 let branch_node_run_item = NodeRunItem {
                                                     node_id: *out_node_id,
                                                     node_input: NodeInput {
@@ -312,12 +227,18 @@ impl Engine {
                                                         msg: msg.clone(),
                                                     },
                                                 };
-                                                
-                                                if let Err(e) = sender.send(EngineMessage::RunFlow {
-                                                    ctx: branch_ctx,
-                                                    start_node: branch_node_run_item,
-                                                }).await {
-                                                    eprintln!("Failed to send RunFlow message: {:?}", e);
+
+                                                if let Err(e) = sender
+                                                    .send(EngineMessage::RunFlow {
+                                                        ctx: branch_ctx,
+                                                        start_node: branch_node_run_item,
+                                                    })
+                                                    .await
+                                                {
+                                                    eprintln!(
+                                                        "Failed to send RunFlow message: {:?}",
+                                                        e
+                                                    );
                                                 }
                                             }
                                         }

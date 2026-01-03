@@ -1,4 +1,4 @@
-use crate::core::Value;
+use crate::core::{Value,ResourceTable, StreamTable};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
@@ -11,7 +11,34 @@ pub type FlowCallback =
 pub struct FlowContext {
     pub id: Uuid,
     pub run_node_ids: Vec<Uuid>,
+    /// FlowListeners is for signaling and control-flow only.
+    /// DO NOT transfer ownership of resources or large data here.
+    /// Use FlowContext::resources with ResourceId instead.
     pub listeners: Arc<FlowListeners>,
+    pub resources: ResourceTable,
+    pub streams: StreamTable
+}
+
+impl FlowContext {
+    pub fn new(id: Uuid) -> Self {
+        Self {
+            id,
+            run_node_ids: Vec::new(),
+            listeners: Arc::new(FlowListeners::new()),
+            resources: ResourceTable::new(),
+            streams: StreamTable::new(),
+        }
+    }
+    
+    pub fn new_branch(&self) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            run_node_ids: self.run_node_ids.clone(),
+            listeners: Arc::clone(&self.listeners),
+            resources: self.resources.clone(),
+            streams: self.streams.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
