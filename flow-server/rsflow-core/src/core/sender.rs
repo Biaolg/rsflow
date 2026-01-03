@@ -1,26 +1,6 @@
-use crate::core::{FlowContext, FlowListeners, NodeRunItem, Value};
-use serde::Deserialize;
+use crate::core::{EngineMessage, FlowContext, FlowListeners, NodeRunItem};
 use std::sync::Arc;
 use uuid::Uuid;
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct EngineConfig {
-    pub msg_len: usize,
-}
-
-pub enum EngineMessage {
-    RunFlow {
-        ctx: FlowContext,
-        start_node: NodeRunItem,
-    },
-    NodeEvent {
-        node_id: Uuid,
-        ctx: FlowContext,
-        event_type: String,
-        event_data: Value,
-    },
-    Stop,
-}
 
 pub struct EngineSender {
     pub tx: tokio::sync::mpsc::Sender<EngineMessage>,
@@ -38,12 +18,13 @@ impl EngineSender {
             .send(EngineMessage::RunFlow { ctx, start_node })
             .await;
     }
+    
     pub async fn node_send(
         &self,
         node_id: Uuid,
         ctx: FlowContext,
         event_type: String,
-        event_data: Value,
+        event_data: crate::core::Value,
     ) {
         let _ = self
             .tx

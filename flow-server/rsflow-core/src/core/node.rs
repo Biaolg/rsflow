@@ -3,18 +3,30 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
+// ===== 基础类型定义 =====
 // 节点端点定义
 pub type NodeInputPorts = HashMap<u8, Vec<Uuid>>;
 pub type NodeOutputPorts = HashMap<u8, Vec<(Uuid, u8)>>;
 
+// ===== 数据结构 =====
+// 节点执行最小单位
 #[derive(Debug)]
-pub enum NodeError {
-    InvalidInput(String),
-    InvalidConfig(String),
-    Io(std::io::Error),
-    Shell(String),
-    Timeout,
-    Cancelled,
+pub struct NodeRunItem {
+    pub node_id: Uuid,
+    pub node_input: NodeInput,
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeInput {
+    pub port: u8,
+    pub msg: Value,
+}
+
+// 节点输出变体
+pub enum NodeOutput {
+    None,
+    One((u8, Value)),
+    Many(Vec<(u8, Value)>),
 }
 
 // 节点基本信息定义
@@ -29,25 +41,18 @@ pub struct NodeInfo {
     pub output_ports: NodeOutputPorts,
 }
 
-// 节点执行最小单位
+// ===== 错误处理 =====
 #[derive(Debug)]
-pub struct NodeRunItem {
-    pub node_id: Uuid,
-    pub node_input: NodeInput,
+pub enum NodeError {
+    InvalidInput(String),
+    InvalidConfig(String),
+    Io(std::io::Error),
+    Shell(String),
+    Timeout,
+    Cancelled,
 }
 
-#[derive(Debug, Clone)]
-pub struct NodeInput {
-    pub port: u8,
-    pub msg: Value,
-}
-//节点输出变体
-pub enum NodeOutput {
-    None,
-    One((u8, Value)),
-    Many(Vec<(u8, Value)>),
-}
-
+// ===== 核心功能trait =====
 #[async_trait::async_trait]
 pub trait Node: Send + Sync {
     /// 返回节点信息（连线、类型等）
@@ -68,6 +73,7 @@ pub trait Node: Send + Sync {
     async fn input(&self,node_input: NodeInput,ctx: &FlowContext) -> Result<NodeOutput, NodeError>;
 }
 
+// ===== 工厂模式trait =====
 #[async_trait::async_trait]
 pub trait NodeFactory: Send + Sync {
     async fn create(&self, node_info: NodeInfo) -> Result<Arc<dyn Node + Send + Sync>, NodeError>;

@@ -49,10 +49,22 @@ fn main() {
     code.push_str("}\n");
     
     // 写入生成的代码到OUT_DIR
-    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let out_dir = match std::env::var("OUT_DIR") {
+        Ok(dir) => dir,
+        Err(e) => {
+            eprintln!("Failed to get OUT_DIR environment variable: {}", e);
+            return;
+        }
+    };
     let out_path = Path::new(&out_dir).join("auto_node_registry.rs");
-    fs::write(&out_path, code).unwrap();
+    if let Err(e) = fs::write(&out_path, code) {
+        eprintln!("Failed to write auto_node_registry.rs to {}: {}", out_path.display(), e);
+        return;
+    }
     
     // 确保cargo知道这个文件
-    println!("cargo:rerun-if-changed={}", out_path.to_str().unwrap());
+    match out_path.to_str() {
+        Some(path_str) => println!("cargo:rerun-if-changed={}", path_str),
+        None => eprintln!("Failed to convert output path to string: {:?}", out_path),
+    }
 }
