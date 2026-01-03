@@ -206,7 +206,6 @@ impl Engine {
                                             if let Some((first_node_id, first_node_port)) =
                                                 iter.next()
                                             {
-                                                // 第一个分支继续当前线程执行
                                                 flow_run_node_ids.push_back(NodeRunItem {
                                                     node_id: *first_node_id,
                                                     node_input: NodeInput {

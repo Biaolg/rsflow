@@ -1,4 +1,4 @@
-use crate::core::{EngineSender, FlowContext, Payload, Value};
+use crate::core::{EngineSender, FlowContext, Payload, ResourceId, StreamId, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -50,6 +50,8 @@ pub enum NodeError {
     Shell(String),
     Timeout,
     Cancelled,
+    ResourceNotFound(ResourceId),
+    StreamNotFound(StreamId),
 }
 
 // ===== 核心功能trait =====

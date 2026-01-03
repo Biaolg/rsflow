@@ -10,6 +10,8 @@ pub use crate::core::node::{
 };
 pub use crate::core::sender::EngineSender;
 pub use crate::core::value::Value;
-pub use crate::core::payload::{Handle, Payload, ResourceId, StreamId, ResourceTable, StreamTable};
 pub use crate::engine::{Engine, EngineBuilder};
 pub use crate::flow::{FlowMod, FlowNode, parse_flow_file, validate_flow};
+pub use crate::core::payload::{
+    Handle, Payload, Resource, ResourceId, ResourceTable, Stream, StreamId, StreamTable,
+};

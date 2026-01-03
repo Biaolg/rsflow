@@ -1,4 +1,5 @@
-use crate::core::{Value,ResourceTable, StreamTable};
+use crate::NodeError;
+use crate::core::{Resource, ResourceId, ResourceTable, Stream, StreamId, StreamTable, Value};
 use std::collections::HashMap;
 use std::{future::Future, pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
@@ -16,10 +17,11 @@ pub struct FlowContext {
     /// Use FlowContext::resources with ResourceId instead.
     pub listeners: Arc<FlowListeners>,
     pub resources: ResourceTable,
-    pub streams: StreamTable
+    pub streams: StreamTable,
 }
 
 impl FlowContext {
+    //创建空上下文
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
@@ -29,7 +31,7 @@ impl FlowContext {
             streams: StreamTable::new(),
         }
     }
-    
+    //创建并发分支
     pub fn new_branch(&self) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -37,6 +39,20 @@ impl FlowContext {
             listeners: Arc::clone(&self.listeners),
             resources: self.resources.clone(),
             streams: self.streams.clone(),
+        }
+    }
+    //获取资源
+    pub async fn get_resource(&self, id: &ResourceId) -> Result<Resource, NodeError> {
+        match self.resources.get(id).await {
+            Some(res) => Ok(res.clone()),
+            None => Err(NodeError::ResourceNotFound(*id)),
+        }
+    }
+    //获取流
+    pub async fn get_stream(&self, id: &StreamId) -> Result<Stream, NodeError> {
+        match self.streams.get(id).await {
+            Some(res) => Ok(res.clone()),
+            None => Err(NodeError::StreamNotFound(*id)),
         }
     }
 }
