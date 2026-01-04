@@ -20,6 +20,9 @@ node_modules/
 # Build
 *.tsbuildinfo
 
-/low-server/target
+/flow-runtime/target
 target/
 .cache/
+
+#tools
+tools/
