@@ -1,8 +1,9 @@
-pub mod shell;
 pub mod inject;
 pub mod log;
+pub mod net;
+pub mod shell;
 
-pub use shell::ShellNodeBuilder;
 pub use inject::InjectNodeBuilder;
 pub use log::LogNodeBuilder;
-
+pub use net::{HttpInNodeBuilder, HttpOutNodeBuilder};
+pub use shell::ShellNodeBuilder;

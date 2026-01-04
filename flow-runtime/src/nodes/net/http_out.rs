@@ -1,6 +1,6 @@
 use rsflow_core::{
     EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
-    NodeOutput, NodeRunItem, Value,
+    NodeOutput,Payload
 };
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ impl Node for HttpOutNode {
     }
     async fn init(&self, sender: EngineSender) { }
 
-    async fn event(&self, _: &str, _: Value, _: &FlowContext) -> Result<(), NodeError> {
+    async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
 

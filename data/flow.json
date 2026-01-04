@@ -7,7 +7,7 @@
     "node_config": {},
     "flow": [
         {
-            "name": "flow1",
+            "name": "inject_test_flow",
             "description": "This is the first flow",
             "id": "2312aa10-e28a-4949-842a-e7afec2b764d",
             "nodes": [
