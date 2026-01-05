@@ -1,12 +1,10 @@
-mod nodes;
-mod auto_node_registry;
-
 use rsflow_core::EngineBuilder;
+use flow_nodes::register_all_nodes;
 
 #[tokio::main]
 async fn main() {
     // 使用自动注册函数
-    let engine = match auto_node_registry::register_all_nodes_to_builder(EngineBuilder::new())
+    let engine = match register_all_nodes(EngineBuilder::new())
         .build("../data/flow.json")
         .await
     {

@@ -1,0 +1,12 @@
+[package]
+name = "flow-nodes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rsflow-core = { path = "../flow-runtime/rsflow-core" }
+flow-node-inject = { path = "./inject" }
+flow-node-log = { path = "./log" }
+flow-node-net = { path = "./net" }
+flow-node-shell = { path = "./shell" }
+async-trait = "0.1"

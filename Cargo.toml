@@ -1,8 +1,0 @@
-[workspace]
-members = [
-    "flow-runtime",
-    "flow-runtime/rsflow-core",
-]
-
-[workspace.dependencies]
-rsflow-core = { path = "flow-runtime/rsflow-core" }

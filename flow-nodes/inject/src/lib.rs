@@ -1,6 +1,4 @@
-use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, NodeRunItem, Payload, Value
-};
+use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, NodeRunItem, Payload, Value};
 use std::sync::Arc;
 
 pub struct InjectNode {

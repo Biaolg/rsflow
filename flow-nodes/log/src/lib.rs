@@ -1,54 +1,50 @@
-use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
-    NodeOutput,Payload
-};
+use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, Value, Payload};
 use std::sync::Arc;
 
-pub struct HttpOutNode {
+pub struct LogNode {
     info: NodeInfo,
 }
 
 #[async_trait::async_trait]
-impl Node for HttpOutNode {
+impl Node for LogNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, sender: EngineSender) { }
-
+    async fn init(&self, _: EngineSender) {}
     async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
-
     async fn input(
         &self,
         node_input: NodeInput,
-        _: &FlowContext,
+        ctx: &FlowContext,
     ) -> Result<NodeOutput, NodeError> {
-        Ok(NodeOutput::One((0, node_input.msg)))
+        println!("{} {:#?}", ctx.id, node_input.msg);
+        Ok(NodeOutput::None)
     }
 }
 
 // NodeFactory 负责创建 Node
-pub struct HttpOutNodeFactory;
+pub struct LogNodeFactory;
 
 #[async_trait::async_trait]
-impl NodeFactory for HttpOutNodeFactory {
+impl NodeFactory for LogNodeFactory {
     async fn create(&self, node_info: NodeInfo) -> Result<Arc<dyn Node + Send + Sync>, NodeError> {
-        Ok(Arc::new(HttpOutNode { info: node_info }))
+        Ok(Arc::new(LogNode { info: node_info }))
     }
 }
 
 // NodeBuilder 负责注册插件
-pub struct HttpOutNodeBuilder;
+pub struct LogNodeBuilder;
 
 #[async_trait::async_trait]
-impl NodeBuilder for HttpOutNodeBuilder {
+impl NodeBuilder for LogNodeBuilder {
     fn node_type(&self) -> &str {
-        "http_in"
+        "log"
     }
 
     async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError> {
-        // 返回一个 HttpOutNodeFactory 的实例
-        Ok(Box::new(HttpOutNodeFactory))
+        // 返回一个 LogNodeFactory 的实例
+        Ok(Box::new(LogNodeFactory))
     }
 }
