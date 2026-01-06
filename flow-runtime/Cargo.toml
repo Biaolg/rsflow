@@ -8,4 +8,5 @@ rsflow-core = { path = "./rsflow-core" }
 flow-nodes = { path = "../flow-nodes" }
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
+clap = { version = "4", features = ["derive"] }
 
