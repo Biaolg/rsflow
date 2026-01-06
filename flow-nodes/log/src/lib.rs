@@ -1,4 +1,7 @@
-use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, Value, Payload};
+use rsflow_core::{
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    NodeOutput, Payload, 
+};
 use std::sync::Arc;
 
 pub struct LogNode {

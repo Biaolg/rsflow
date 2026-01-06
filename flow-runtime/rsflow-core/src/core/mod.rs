@@ -10,7 +10,7 @@ pub use flow::{FlowContext, FlowEventKey, FlowListeners};
 pub use message::{EngineConfig, EngineMessage};
 pub use node::{
     Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeInputPorts, NodeOutput,
-    NodeOutputPorts, NodeRunItem,
+    NodeOutputPorts, NodeRunItem
 };
 pub use payload::{
     Handle, Payload, Resource, ResourceId, ResourceTable, Stream, StreamId, StreamTable,
