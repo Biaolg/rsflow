@@ -39,6 +39,7 @@ pub struct NodeInfo {
     pub config: Value,
     pub input_ports: NodeInputPorts,
     pub output_ports: NodeOutputPorts,
+    pub global_config: Value,
 }
 
 // ===== 错误处理 =====
@@ -88,5 +89,5 @@ pub trait NodeFactory: Send + Sync {
 #[async_trait::async_trait]
 pub trait NodeBuilder: Send + Sync {
     fn node_type(&self) -> &str;
-    async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError>;
+    async fn register(&self, global_config: &Value) -> Result<Box<dyn NodeFactory>, NodeError>;
 }

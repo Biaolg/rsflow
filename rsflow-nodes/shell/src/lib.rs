@@ -1,4 +1,7 @@
-use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, Payload, Value};
+use rsflow_core::{
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    NodeOutput, Payload, Value,
+};
 use std::sync::Arc;
 use tokio::process::Command;
 use tokio::time::{Duration, timeout};
@@ -35,7 +38,7 @@ impl Node for ShellNode {
             Payload {
                 value: Value::Object(map),
                 ..
-            } => map.get("command").and_then(|v| match v {  
+            } => map.get("command").and_then(|v| match v {
                 Value::String(s) => Some(s.clone()),
                 _ => None,
             }),
@@ -75,7 +78,9 @@ impl Node for ShellNode {
 
         Ok(NodeOutput::One((
             0,
-            Payload::new(Value::String(String::from_utf8_lossy(&output.stdout).to_string()))
+            Payload::new(Value::String(
+                String::from_utf8_lossy(&output.stdout).to_string(),
+            )),
         )))
     }
 }
@@ -114,7 +119,7 @@ impl NodeBuilder for ShellNodeBuilder {
         "shell"
     }
 
-    async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError> {
+    async fn register(&self, _: &Value) -> Result<Box<dyn NodeFactory>, NodeError> {
         Ok(Box::new(ShellNodeFactory))
     }
 }

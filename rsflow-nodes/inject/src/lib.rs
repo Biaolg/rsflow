@@ -63,7 +63,7 @@ impl NodeBuilder for InjectNodeBuilder {
         "inject"
     }
 
-    async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError> {
+    async fn register(&self, _: &Value) -> Result<Box<dyn NodeFactory>, NodeError> {
         // 返回一个 InjectNodeFactory 的实例
         Ok(Box::new(InjectNodeFactory))
     }

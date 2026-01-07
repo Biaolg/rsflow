@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 rsflow-core = { path = "./rsflow-core" }
-flow-nodes = { path = "../flow-nodes" }
+rsflow-nodes = { path = "../rsflow-nodes" }
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 clap = { version = "4", features = ["derive"] }

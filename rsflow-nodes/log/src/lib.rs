@@ -1,6 +1,6 @@
 use rsflow_core::{
     EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
-    NodeOutput, Payload, 
+    NodeOutput, Payload, Value
 };
 use std::sync::Arc;
 
@@ -46,7 +46,7 @@ impl NodeBuilder for LogNodeBuilder {
         "log"
     }
 
-    async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError> {
+    async fn register(&self, _: &Value) -> Result<Box<dyn NodeFactory>, NodeError> {
         // 返回一个 LogNodeFactory 的实例
         Ok(Box::new(LogNodeFactory))
     }

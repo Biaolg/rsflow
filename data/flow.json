@@ -1,10 +1,13 @@
 {
     "config": {
-        "host": "localhost",
-        "port": 8080,
         "msg_len": 100
     },
-    "node_config": {},
+    "node_global_config": {
+        "http_in": {
+            "host": "localhost",
+            "port": 8080
+        }
+    },
     "flow": [
         {
             "name": "inject_test_flow",
@@ -97,6 +100,35 @@
                         }
                     ],
                     "output": []
+                }
+            ]
+        },
+        {
+            "name": "net_test_flow",
+            "description": "net flow",
+            "id": "febef0d5-748e-49d0-8048-0124977e5ba1",
+            "nodes": [
+                {
+                    "id": "6e03f3e5-4f3d-443b-8ddd-65ebe9af762f",
+                    "name": "http_in",
+                    "node_type": "http_in",
+                    "description": "",
+                    "config": {
+                        "method": "GET",
+                        "path": "/test"
+                    },
+                    "input": [],
+                    "output": [
+                        {
+                            "port": 0,
+                            "nodes": [
+                                {
+                                    "id": "0c72f3d3-3b9b-45db-866e-3615811940fe",
+                                    "port": 0
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

@@ -1,8 +1,0 @@
-[package]
-name = "flow-node-net"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-rsflow-core = { path = "../../flow-runtime/rsflow-core" }
-async-trait = "0.1"

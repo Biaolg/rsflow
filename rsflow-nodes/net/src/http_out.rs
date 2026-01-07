@@ -1,4 +1,7 @@
-use rsflow_core::{EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput, NodeOutput, Payload};
+use rsflow_core::{
+    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    NodeOutput, Payload, Value,
+};
 use std::sync::Arc;
 
 pub struct HttpOutNode {
@@ -10,17 +13,13 @@ impl Node for HttpOutNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, sender: EngineSender) { }
+    async fn init(&self, sender: EngineSender) {}
 
     async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
 
-    async fn input(
-        &self,
-        node_input: NodeInput,
-        _: &FlowContext,
-    ) -> Result<NodeOutput, NodeError> {
+    async fn input(&self, node_input: NodeInput, _: &FlowContext) -> Result<NodeOutput, NodeError> {
         Ok(NodeOutput::One((0, node_input.msg)))
     }
 }
@@ -44,7 +43,7 @@ impl NodeBuilder for HttpOutNodeBuilder {
         "http_out"
     }
 
-    async fn register(&self) -> Result<Box<dyn NodeFactory>, NodeError> {
+    async fn register(&self, _: &Value) -> Result<Box<dyn NodeFactory>, NodeError> {
         // 返回一个 HttpOutNodeFactory 的实例
         Ok(Box::new(HttpOutNodeFactory))
     }

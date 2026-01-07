@@ -40,10 +40,20 @@ impl Engine {
         let node_types = FlowProcessor::extract_node_types(&flow_nodes);
 
         // 将构建器转换为工厂
-        let factories = FlowProcessor::builders_to_factories(builders, &node_types).await?;
+        let factories = FlowProcessor::builders_to_factories(
+            builders,
+            &node_types,
+            &flow_mod.node_global_config,
+        )
+        .await?;
 
         // 创建节点实例
-        let nodes = FlowProcessor::create_nodes_from_flow(flow_nodes, &factories).await?;
+        let nodes = FlowProcessor::create_nodes_from_flow(
+            flow_nodes,
+            &factories,
+            &flow_mod.node_global_config,
+        )
+        .await?;
 
         let (tx, rx) = mpsc::channel(flow_mod.config.msg_len);
 
@@ -98,7 +108,7 @@ impl Engine {
     /// 节点消息事件
     fn node_event(&self, node_id: Uuid, event_type: String, ctx: FlowContext, payload: Payload) {
         let nodes: Nodes = Arc::clone(&self.nodes);
- 
+
         tokio::spawn(async move {
             if let Some(node) = nodes.get(&node_id) {
                 if let Err(err) = node.event(&event_type, payload, &ctx).await {

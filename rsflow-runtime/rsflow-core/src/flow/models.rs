@@ -5,6 +5,7 @@ use uuid::Uuid;
 #[derive(Debug, Deserialize, Clone)]
 pub struct FlowMod {
     pub config: EngineConfig,
+    pub node_global_config: Value,
     pub flow: Vec<Flow>,
 }
 
