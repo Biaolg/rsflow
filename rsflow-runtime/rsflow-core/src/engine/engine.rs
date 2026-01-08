@@ -17,7 +17,9 @@ type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
 
 pub struct Engine {
     flow_mod: FlowMod,
+    //已注册节点
     nodes: Nodes,
+    //节点调度器
     receiver: Mutex<mpsc::Receiver<EngineMessage>>,
     sender: mpsc::Sender<EngineMessage>,
 }

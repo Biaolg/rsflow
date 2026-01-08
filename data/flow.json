@@ -1,13 +1,10 @@
 {
     "config": {
-        "msg_len": 100
+        "msg_len": 1000,
+        "http_port": 8423,
+        "base_flow_router": "/flow"
     },
-    "node_global_config": {
-        "http_in": {
-            "host": "localhost",
-            "port": 8080
-        }
-    },
+    "node_global_config": {},
     "flow": [
         {
             "name": "inject_test_flow",

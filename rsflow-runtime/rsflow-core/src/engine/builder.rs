@@ -1,5 +1,6 @@
-use std::collections::HashMap;
 use crate::core::node::NodeBuilder;
+use crate::engine::plugin::EnginePluginBuilder;
+use std::collections::HashMap;
 
 type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
 
@@ -24,15 +25,19 @@ impl EngineBuilder {
         self
     }
 
+    /// 注册中引擎插件
+    pub fn register_engine_plugin<B>(mut self, builder: B) -> Self
+    where
+        B: EnginePluginBuilder + 'static,
+    {
+        self
+    }
+
     /// 构建 Engine
     pub async fn build(
         self,
-        flow_file_path: &str
+        flow_file_path: &str,
     ) -> std::result::Result<std::sync::Arc<crate::engine::engine::Engine>, std::io::Error> {
-        crate::engine::engine::Engine::create_with_builders(
-            flow_file_path,
-            self.builders,
-        )
-        .await
+        crate::engine::engine::Engine::create_with_builders(flow_file_path, self.builders).await
     }
 }

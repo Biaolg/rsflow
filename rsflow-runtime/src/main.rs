@@ -1,5 +1,6 @@
 use rsflow_core::EngineBuilder;
 use rsflow_nodes::register_all_nodes;
+use rsflow_net::HttpServerManager;
 use clap::Parser;
 
 /// RSFlow Runtime
@@ -22,6 +23,13 @@ enum Command {
 #[tokio::main]
 async fn main() {
     let cmd = Command::parse();
+    
+    // 初始化 HTTP 服务管理器，默认使用 8080 端口
+    let http_server = HttpServerManager::new(8080);
+    // 在后台启动 HTTP 服务
+    tokio::spawn(async move {
+        http_server.start().await;
+    });
     
     match cmd {
         Command::Run { flow_file } => {

@@ -5,6 +5,8 @@ use uuid::Uuid;
 #[derive(Debug, Deserialize, Clone)]
 pub struct EngineConfig {
     pub msg_len: usize,
+    pub http_port: u16,
+    pub base_flow_router: String,
 }
 
 pub enum EngineMessage {
