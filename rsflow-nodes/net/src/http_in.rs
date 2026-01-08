@@ -2,11 +2,7 @@ use rsflow_core::{
     EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
     NodeOutput, Payload, Value,
 };
-use std::net::SocketAddr;
 use std::sync::Arc;
-use std::sync::OnceLock;
-
-static ADDR: OnceLock<SocketAddr> = OnceLock::new();
 
 pub struct HttpInNode {
     info: NodeInfo
@@ -52,19 +48,6 @@ impl NodeBuilder for HttpInNodeBuilder {
         &self,
         node_global_config: &Value,
     ) -> Result<Box<dyn NodeFactory>, NodeError> {
-        //创建端口监听
-        let port = match Some(node_global_config) {
-            Some(Value::Object(map)) => map
-                .get("port")
-                .and_then(|v| match v {
-                    Value::Int(i) => Some(*i as u16),
-                    Value::Long(l) => Some(*l as u16),
-                    _ => None,
-                })
-                .unwrap_or(8080),
-            _ => 8080,
-        };
-        ADDR.set(SocketAddr::from(([127, 0, 0, 1], port))).unwrap();
         // 返回一个 HttpInNodeFactory 的实例
         Ok(Box::new(HttpInNodeFactory))
     }

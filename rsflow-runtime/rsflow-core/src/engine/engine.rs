@@ -36,8 +36,8 @@ impl Engine {
         let flow_mod = FlowProcessor::parse_flow_file(flow_file_path)?;
 
         // 提取节点和节点类型
-        let flow_nodes = FlowProcessor::extract_nodes(&flow_mod);
-        let node_types = FlowProcessor::extract_node_types(&flow_nodes);
+        let rsflow_nodes = FlowProcessor::extract_nodes(&flow_mod);
+        let node_types = FlowProcessor::extract_node_types(&rsflow_nodes);
 
         // 将构建器转换为工厂
         let factories = FlowProcessor::builders_to_factories(
@@ -49,7 +49,7 @@ impl Engine {
 
         // 创建节点实例
         let nodes = FlowProcessor::create_nodes_from_flow(
-            flow_nodes,
+            rsflow_nodes,
             &factories,
             &flow_mod.node_global_config,
         )

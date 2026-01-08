@@ -1,5 +1,5 @@
 use rsflow_core::EngineBuilder;
-use flow_nodes::register_all_nodes;
+use rsflow_nodes::register_all_nodes;
 use clap::Parser;
 
 /// RSFlow Runtime

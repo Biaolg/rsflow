@@ -26,8 +26,8 @@ pub fn parse_flow_all_nodes(flow_mod: FlowMod) -> Vec<FlowNode> {
 }
 
 // 获取所有节点类型
-pub fn parse_flow_all_node_types(flow_nodes: Vec<FlowNode>) -> HashSet<String> {
-    flow_nodes.into_iter().map(|node| node.node_type).collect()
+pub fn parse_flow_all_node_types(rsflow_nodes: Vec<FlowNode>) -> HashSet<String> {
+    rsflow_nodes.into_iter().map(|node| node.node_type).collect()
 }
 
 // 验证flow配置

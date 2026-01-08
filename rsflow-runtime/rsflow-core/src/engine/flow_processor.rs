@@ -36,8 +36,8 @@ impl FlowProcessor {
     }
 
     /// 从节点列表中提取所有节点类型
-    pub fn extract_node_types(flow_nodes: &[FlowNode]) -> HashSet<String> {
-        flow_nodes
+    pub fn extract_node_types(rsflow_nodes: &[FlowNode]) -> HashSet<String> {
+        rsflow_nodes
             .iter()
             .map(|node| node.node_type.clone())
             .collect()
@@ -82,13 +82,13 @@ impl FlowProcessor {
 
     /// 从流程节点创建核心节点实例
     pub async fn create_nodes_from_flow(
-        flow_nodes: Vec<FlowNode>,
+        rsflow_nodes: Vec<FlowNode>,
         factories: &FactoryMap,
         node_global_config: &Value,
     ) -> Result<HashMap<Uuid, std::sync::Arc<dyn crate::core::Node + Send + Sync>>, IoError> {
         let mut nodes = HashMap::new();
 
-        for flow_node in flow_nodes {
+        for flow_node in rsflow_nodes {
             if let Some(factory) = factories.get(&flow_node.node_type) {
                 // 将 FlowNodeInput 转换为 NodeInputPorts
                 let inputs: NodeInputPorts = flow_node
