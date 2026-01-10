@@ -1,8 +1,8 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeInput, NodeOutput, NodeRunItem, Payload,
+    EngineContext, EngineMessage, FlowContext, Node, NodeInput, NodeOutput, NodeRunItem, Payload,
 };
 use crate::engine::flow_processor::FlowProcessor;
-use crate::engine::{NodeBuilderMap, PluginBuilderMap};
+use crate::engine::{NodeBuilderMap, PluginMap};
 use crate::flow::FlowMod;
 
 use std::collections::{HashMap, VecDeque};
@@ -13,11 +13,14 @@ use uuid::Uuid;
 
 type NodeMap = HashMap<Uuid, Arc<dyn Node + Send + Sync>>;
 type Nodes = Arc<NodeMap>;
+type Plugins = Arc<PluginMap>;
 
 pub struct Engine {
-    flow_mod: FlowMod,
+    flow_mod: Arc<FlowMod>,
     //节点实例列表
     nodes: Nodes,
+    //插件
+    plugins: Plugins,
     //节点调度器
     receiver: Mutex<mpsc::Receiver<EngineMessage>>,
     sender: mpsc::Sender<EngineMessage>,
@@ -31,8 +34,8 @@ impl Engine {
     /// ⚠️ 只能通过 Builder 调用
     pub async fn create_with_builders(
         flow_file_path: &str,
-        node_builders: NodeBuilderMap,     //节点构建器
-        plugin_builders: PluginBuilderMap, //插件构建器
+        node_builders: NodeBuilderMap, //节点构建器
+        plugins: PluginMap,            //插件
     ) -> Result<Arc<Self>, std::io::Error> {
         // 解析流程文件并验证
         let flow_mod = FlowProcessor::parse_flow_file(flow_file_path)?;
@@ -44,12 +47,12 @@ impl Engine {
         let mut all_node_builders: NodeBuilderMap = HashMap::new();
 
         all_node_builders.extend(node_builders);
-        for v in plugin_builders.values() {
+        for v in plugins.values() {
             all_node_builders.extend(v.internal_nodes());
         }
 
         // 将构建器转换为工厂
-        let factories = FlowProcessor::builders_to_factories(
+        let node_factories = FlowProcessor::builders_to_factories(
             all_node_builders,
             &node_types,
             &flow_mod.node_global_config,
@@ -59,7 +62,7 @@ impl Engine {
         // 创建节点实例
         let nodes = FlowProcessor::create_nodes_from_flow(
             rsflow_nodes,
-            &factories,
+            &node_factories,
             &flow_mod.node_global_config,
         )
         .await?;
@@ -67,8 +70,9 @@ impl Engine {
         let (tx, rx) = mpsc::channel(flow_mod.config.msg_len);
 
         Ok(Arc::new(Self {
-            flow_mod,
+            flow_mod: Arc::new(flow_mod),
             nodes: Arc::new(nodes),
+            plugins: Arc::new(plugins),
             receiver: Mutex::new(rx),
             sender: tx,
         }))
@@ -78,10 +82,21 @@ impl Engine {
     pub async fn start(self: Arc<Self>) {
         println!("Starting engine...");
 
+        // 启动插件
+        for (name, plugin) in self.plugins.iter() {
+            let engine_ctx = EngineContext {
+                flow_mod: self.flow_mod.clone(),
+                sender: self.sender.clone(),
+            };
+            println!("Starting plugin: {}", name);
+            plugin.engine_start(engine_ctx).await;
+        }
+
         // 启动节点
         for (node_id, node) in self.nodes.iter() {
-            let engine_ctx = EngineSender {
-                tx: self.sender.clone(),
+            let engine_ctx = EngineContext {
+                flow_mod: self.flow_mod.clone(),
+                sender: self.sender.clone(),
             };
             println!("Starting node: {} - {}", node_id, node.info().name);
             node.engine_start(engine_ctx).await;
@@ -133,10 +148,10 @@ impl Engine {
         let sender = self.sender.clone();
 
         tokio::spawn(async move {
-            let mut flow_run_node_ids: VecDeque<NodeRunItem> = VecDeque::new();
-            flow_run_node_ids.push_back(start_node);
+            let mut flow_run_nodes: VecDeque<NodeRunItem> = VecDeque::new();
+            flow_run_nodes.push_back(start_node);
 
-            while let Some(node_run_item) = flow_run_node_ids.pop_front() {
+            while let Some(node_run_item) = flow_run_nodes.pop_front() {
                 let Some(node) = nodes.get(&node_run_item.node_id) else {
                     eprintln!("Node {} not found", node_run_item.node_id);
                     continue;
@@ -154,7 +169,7 @@ impl Engine {
                                     if out_node_ids.len() == 1 {
                                         // 单分支，继续当前线程执行
                                         let (out_node_id, out_node_port) = &out_node_ids[0];
-                                        flow_run_node_ids.push_back(NodeRunItem {
+                                        flow_run_nodes.push_back(NodeRunItem {
                                             node_id: *out_node_id,
                                             node_input: NodeInput {
                                                 port: *out_node_port,
@@ -167,7 +182,7 @@ impl Engine {
                                         if let Some((first_node_id, first_node_port)) = iter.next()
                                         {
                                             // 第一个分支继续当前线程执行
-                                            flow_run_node_ids.push_back(NodeRunItem {
+                                            flow_run_nodes.push_back(NodeRunItem {
                                                 node_id: *first_node_id,
                                                 node_input: NodeInput {
                                                     port: *first_node_port,
@@ -212,7 +227,7 @@ impl Engine {
                                         if out_node_ids.len() == 1 {
                                             // 单分支，继续当前线程执行
                                             let (out_node_id, out_node_port) = &out_node_ids[0];
-                                            flow_run_node_ids.push_back(NodeRunItem {
+                                            flow_run_nodes.push_back(NodeRunItem {
                                                 node_id: *out_node_id,
                                                 node_input: NodeInput {
                                                     port: *out_node_port,
@@ -225,7 +240,7 @@ impl Engine {
                                             if let Some((first_node_id, first_node_port)) =
                                                 iter.next()
                                             {
-                                                flow_run_node_ids.push_back(NodeRunItem {
+                                                flow_run_nodes.push_back(NodeRunItem {
                                                     node_id: *first_node_id,
                                                     node_input: NodeInput {
                                                         port: *first_node_port,

@@ -1,13 +1,14 @@
 use crate::core::node::NodeBuilder;
-use crate::engine::plugin::{EnginePluginBuilder};
+use crate::engine::plugin::{EnginePlugin};
+use std::sync::Arc;
 use std::collections::HashMap;
 
 pub type NodeBuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
-pub type PluginBuilderMap = HashMap<String, Box<dyn EnginePluginBuilder>>;
+pub type PluginMap = HashMap<String, Arc<dyn EnginePlugin + Send + Sync>>;
 
 pub struct EngineBuilder {
     nodes: NodeBuilderMap,
-    plugins: PluginBuilderMap,
+    plugins: PluginMap,
 }
 
 impl EngineBuilder {
@@ -31,10 +32,10 @@ impl EngineBuilder {
     /// 注册中引擎插件
     pub fn register_engine_plugin<B>(mut self, builder: B) -> Self
     where
-        B: EnginePluginBuilder + 'static,
+        B: EnginePlugin + 'static,
     {
         self.plugins
-            .insert(builder.plugin_name().to_string(), Box::new(builder));
+            .insert(builder.name().to_string(), Arc::new(builder));
         self
     }
 

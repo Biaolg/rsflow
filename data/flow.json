@@ -1,8 +1,13 @@
 {
     "config": {
-        "msg_len": 1000,
-        "http_port": 8423,
-        "base_flow_router": "/flow"
+        "msg_len": 1000
+    },
+    "plugin_config": {
+        "net": {
+            "http": {
+                "http_port": 8423
+            }
+        }
     },
     "node_global_config": {},
     "flow": [

@@ -1,15 +1,18 @@
 use crate::core::{EngineMessage, FlowContext, NodeRunItem, Payload};
+use crate::flow::FlowMod;
+use std::sync::Arc;
 use uuid::Uuid;
 
-pub struct EngineSender {
-    pub tx: tokio::sync::mpsc::Sender<EngineMessage>,
+pub struct EngineContext {
+    pub flow_mod:Arc<FlowMod>,
+    pub sender: tokio::sync::mpsc::Sender<EngineMessage>,
 }
 
-impl EngineSender {
+impl EngineContext {
     pub async fn run_flow(&self, start_node: NodeRunItem) {
         let ctx = FlowContext::new(Uuid::new_v4());
         let _ = self
-            .tx
+            .sender
             .send(EngineMessage::RunFlow { ctx, start_node })
             .await;
     }
@@ -22,7 +25,7 @@ impl EngineSender {
         payload: Payload,
     ) {
         let _ = self
-            .tx
+            .sender
             .send(EngineMessage::NodeEvent {
                 node_id,
                 ctx,

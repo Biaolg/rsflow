@@ -25,7 +25,6 @@ async fn main() {
     
     match cmd {
         Command::Run { flow_file } => {
-            // 使用自动注册函数
             let engine = match register_all_nodes(EngineBuilder::new())
                 .build(&flow_file)
                 .await

@@ -1,4 +1,4 @@
-use crate::core::{EngineSender, FlowContext, Payload, ResourceId, StreamId, Value};
+use crate::core::{EngineContext, FlowContext, Payload, ResourceId, StreamId, Value};
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -62,7 +62,7 @@ pub trait Node: Send + Sync {
     fn info(&self) -> NodeInfo;
 
     /// 引擎启动时调用
-    async fn engine_start(&self, sender: EngineSender);
+    async fn engine_start(&self, sender: EngineContext);
 
     /// 节点接收到事件时的处理
     async fn event(

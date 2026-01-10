@@ -15,5 +15,5 @@ pub use node::{
 pub use payload::{
     Handle, Payload, Resource, ResourceId, ResourceTable, Stream, StreamId, StreamTable,
 };
-pub use sender::EngineSender;
+pub use sender::EngineContext;
 pub use value::Value;

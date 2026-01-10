@@ -1,5 +1,5 @@
 use rsflow_core::{
-    EngineSender, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
+    EngineContext, FlowContext, Node, NodeBuilder, NodeError, NodeFactory, NodeInfo, NodeInput,
     NodeOutput, Payload, Value
 };
 use std::sync::Arc;
@@ -13,7 +13,7 @@ impl Node for LogNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn engine_start(&self, _: EngineSender) {}
+    async fn engine_start(&self, _: EngineContext) {}
     async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }
