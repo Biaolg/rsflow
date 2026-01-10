@@ -7,6 +7,5 @@ edition = "2024"
 rsflow-core = { path = "../rsflow-runtime/rsflow-core" }
 flow-node-inject = { path = "./inject" }
 flow-node-log = { path = "./log" }
-flow-node-net = { path = "./net" }
 flow-node-shell = { path = "./shell" }
 async-trait = "0.1"

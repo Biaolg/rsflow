@@ -13,7 +13,7 @@ impl Node for LogNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, _: EngineSender) {}
+    async fn engine_start(&self, _: EngineSender) {}
     async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
         Ok(())
     }

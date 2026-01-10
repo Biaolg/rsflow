@@ -1,17 +1,20 @@
 use crate::core::node::NodeBuilder;
-use crate::engine::plugin::EnginePluginBuilder;
+use crate::engine::plugin::{EnginePluginBuilder};
 use std::collections::HashMap;
 
-type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
+pub type NodeBuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
+pub type PluginBuilderMap = HashMap<String, Box<dyn EnginePluginBuilder>>;
 
 pub struct EngineBuilder {
-    builders: BuilderMap,
+    nodes: NodeBuilderMap,
+    plugins: PluginBuilderMap,
 }
 
 impl EngineBuilder {
     pub fn new() -> Self {
         Self {
-            builders: HashMap::new(),
+            nodes: HashMap::new(),
+            plugins: HashMap::new(),
         }
     }
 
@@ -20,7 +23,7 @@ impl EngineBuilder {
     where
         B: NodeBuilder + 'static,
     {
-        self.builders
+        self.nodes
             .insert(builder.node_type().to_string(), Box::new(builder));
         self
     }
@@ -30,6 +33,8 @@ impl EngineBuilder {
     where
         B: EnginePluginBuilder + 'static,
     {
+        self.plugins
+            .insert(builder.plugin_name().to_string(), Box::new(builder));
         self
     }
 
@@ -38,6 +43,11 @@ impl EngineBuilder {
         self,
         flow_file_path: &str,
     ) -> std::result::Result<std::sync::Arc<crate::engine::engine::Engine>, std::io::Error> {
-        crate::engine::engine::Engine::create_with_builders(flow_file_path, self.builders).await
+        crate::engine::engine::Engine::create_with_builders(
+            flow_file_path,
+            self.nodes,
+            self.plugins,
+        )
+        .await
     }
 }

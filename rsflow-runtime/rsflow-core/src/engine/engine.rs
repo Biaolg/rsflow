@@ -1,8 +1,8 @@
 use crate::core::{
-    EngineMessage, EngineSender, FlowContext, Node, NodeBuilder, NodeInput, NodeOutput,
-    NodeRunItem, Payload,
+    EngineMessage, EngineSender, FlowContext, Node, NodeInput, NodeOutput, NodeRunItem, Payload,
 };
 use crate::engine::flow_processor::FlowProcessor;
+use crate::engine::{NodeBuilderMap, PluginBuilderMap};
 use crate::flow::FlowMod;
 
 use std::collections::{HashMap, VecDeque};
@@ -13,11 +13,10 @@ use uuid::Uuid;
 
 type NodeMap = HashMap<Uuid, Arc<dyn Node + Send + Sync>>;
 type Nodes = Arc<NodeMap>;
-type BuilderMap = HashMap<String, Box<dyn NodeBuilder>>;
 
 pub struct Engine {
     flow_mod: FlowMod,
-    //已注册节点
+    //节点实例列表
     nodes: Nodes,
     //节点调度器
     receiver: Mutex<mpsc::Receiver<EngineMessage>>,
@@ -32,7 +31,8 @@ impl Engine {
     /// ⚠️ 只能通过 Builder 调用
     pub async fn create_with_builders(
         flow_file_path: &str,
-        builders: BuilderMap,
+        node_builders: NodeBuilderMap,     //节点构建器
+        plugin_builders: PluginBuilderMap, //插件构建器
     ) -> Result<Arc<Self>, std::io::Error> {
         // 解析流程文件并验证
         let flow_mod = FlowProcessor::parse_flow_file(flow_file_path)?;
@@ -41,9 +41,16 @@ impl Engine {
         let rsflow_nodes = FlowProcessor::extract_nodes(&flow_mod);
         let node_types = FlowProcessor::extract_node_types(&rsflow_nodes);
 
+        let mut all_node_builders: NodeBuilderMap = HashMap::new();
+
+        all_node_builders.extend(node_builders);
+        for v in plugin_builders.values() {
+            all_node_builders.extend(v.internal_nodes());
+        }
+
         // 将构建器转换为工厂
         let factories = FlowProcessor::builders_to_factories(
-            builders,
+            all_node_builders,
             &node_types,
             &flow_mod.node_global_config,
         )
@@ -71,13 +78,13 @@ impl Engine {
     pub async fn start(self: Arc<Self>) {
         println!("Starting engine...");
 
-        // 初始化节点
+        // 启动节点
         for (node_id, node) in self.nodes.iter() {
             let engine_ctx = EngineSender {
                 tx: self.sender.clone(),
             };
-            println!("Initializing node: {} - {}", node_id, node.info().name);
-            node.init(engine_ctx).await;
+            println!("Starting node: {} - {}", node_id, node.info().name);
+            node.engine_start(engine_ctx).await;
         }
 
         println!("Engine started. Waiting for messages...");

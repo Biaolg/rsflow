@@ -61,8 +61,8 @@ pub trait Node: Send + Sync {
     /// 返回节点信息（连线、类型等）
     fn info(&self) -> NodeInfo;
 
-    /// 初始化节点
-    async fn init(&self, sender: EngineSender);
+    /// 引擎启动时调用
+    async fn engine_start(&self, sender: EngineSender);
 
     /// 节点接收到事件时的处理
     async fn event(

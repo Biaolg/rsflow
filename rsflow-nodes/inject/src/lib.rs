@@ -10,7 +10,7 @@ impl Node for InjectNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, sender: EngineSender) {
+    async fn engine_start(&self, sender: EngineSender) {
         let node_id = self.info.id;
 
         tokio::spawn(async move {

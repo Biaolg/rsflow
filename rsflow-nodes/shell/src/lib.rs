@@ -26,7 +26,7 @@ impl Node for ShellNode {
     fn info(&self) -> NodeInfo {
         self.info.clone()
     }
-    async fn init(&self, _: EngineSender) {
+    async fn engine_start(&self, _: EngineSender) {
         // 初始化逻辑
     }
     async fn event(&self, _: &str, _: Payload, _: &FlowContext) -> Result<(), NodeError> {
